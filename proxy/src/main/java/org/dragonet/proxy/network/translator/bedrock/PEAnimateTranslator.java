@@ -12,23 +12,19 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
  * You can view the LICENSE file for more details.
  *
- * @author Dragonet Foundation
- * @link https://github.com/DragonetMC/DragonProxy
+ * https://github.com/DragonetMC/DragonProxy
  */
 package org.dragonet.proxy.network.translator.bedrock;
 
-import com.github.steveice10.mc.protocol.data.game.entity.player.Hand;
-import com.github.steveice10.mc.protocol.packet.ingame.client.player.ClientPlayerSwingArmPacket;
 import com.nukkitx.protocol.bedrock.packet.AnimatePacket;
 import org.dragonet.proxy.network.session.ProxySession;
 import org.dragonet.proxy.network.translator.PacketTranslator;
+import org.dragonet.proxy.network.translator.annotations.PEPacketTranslator;
 
-public class PEAnimateTranslator implements PacketTranslator<AnimatePacket> {
+@PEPacketTranslator(packetClass = AnimatePacket.class)
+public class PEAnimateTranslator extends PacketTranslator<AnimatePacket> {
     public static final PEAnimateTranslator INSTANCE = new PEAnimateTranslator();
 
     @Override
@@ -36,7 +32,7 @@ public class PEAnimateTranslator implements PacketTranslator<AnimatePacket> {
         switch(packet.getAction()) {
             case SWING_ARM:
                 //ClientPlayerSwingArmPacket swingArmPacket = new ClientPlayerSwingArmPacket(Hand.MAIN_HAND);
-                //session.getDownstream().getSession().send(swingArmPacket);
+                //session.sendRemotePacket(swingArmPacket);
         }
     }
 }

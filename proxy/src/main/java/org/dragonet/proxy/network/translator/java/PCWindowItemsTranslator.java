@@ -12,13 +12,9 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
  * You can view the LICENSE file for more details.
  *
- * @author Dragonet Foundation
- * @link https://github.com/DragonetMC/DragonProxy
+ * https://github.com/DragonetMC/DragonProxy
  */
 package org.dragonet.proxy.network.translator.java;
 
@@ -26,15 +22,17 @@ import com.github.steveice10.mc.protocol.packet.ingame.server.window.ServerWindo
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.dragonet.proxy.network.session.ProxySession;
 import org.dragonet.proxy.network.session.cache.WindowCache;
 import org.dragonet.proxy.network.session.cache.object.CachedWindow;
-import org.dragonet.proxy.network.session.ProxySession;
 import org.dragonet.proxy.network.translator.PacketTranslator;
+import org.dragonet.proxy.network.translator.annotations.PCPacketTranslator;
 import org.dragonet.proxy.network.translator.types.InventoryTranslator;
 
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
+
 @Log4j2
-public class PCWindowItemsTranslator implements PacketTranslator<ServerWindowItemsPacket> {
+@PCPacketTranslator(packetClass = ServerWindowItemsPacket.class)
+public class PCWindowItemsTranslator extends PacketTranslator<ServerWindowItemsPacket> {
     public static final PCWindowItemsTranslator INSTANCE = new PCWindowItemsTranslator();
 
     @Override
@@ -45,7 +43,7 @@ public class PCWindowItemsTranslator implements PacketTranslator<ServerWindowIte
             return;
         }
         CachedWindow window = windowCache.getWindows().get(packet.getWindowId());
-        if(packet.getWindowId() != 0 && window.getWindowType() == null) {
+        if(packet.getWindowId() != 0 && window.getType() == null) {
             return;
         }
 

@@ -12,13 +12,9 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
  * You can view the LICENSE file for more details.
  *
- * @author Dragonet Foundation
- * @link https://github.com/DragonetMC/DragonProxy
+ * https://github.com/DragonetMC/DragonProxy
  */
 package org.dragonet.proxy.network.translator.java;
 
@@ -29,11 +25,13 @@ import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.dragonet.proxy.network.session.ProxySession;
 import org.dragonet.proxy.network.translator.PacketTranslator;
+import org.dragonet.proxy.network.translator.annotations.PCPacketTranslator;
 import org.dragonet.proxy.network.translator.types.MessageTranslator;
 
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
+
 @Log4j2
-public class PCTitleTranslator implements PacketTranslator<ServerTitlePacket> {
+@PCPacketTranslator(packetClass = ServerTitlePacket.class)
+public class PCTitleTranslator extends PacketTranslator<ServerTitlePacket> {
     public static PCTitleTranslator INSTANCE = new PCTitleTranslator();
 
     @Override
@@ -46,7 +44,7 @@ public class PCTitleTranslator implements PacketTranslator<ServerTitlePacket> {
         switch(packet.getAction()) {
             case ACTION_BAR:
                 bedrockPacket.setType(SetTitlePacket.Type.SET_ACTIONBAR_MESSAGE);
-                bedrockPacket.setText(MessageTranslator.translate(packet.getActionBar().getText()));
+                bedrockPacket.setText(MessageTranslator.translate(packet.getTitle().getText()));
                 break;
             case TITLE:
                 bedrockPacket.setType(SetTitlePacket.Type.SET_TITLE);
@@ -54,7 +52,7 @@ public class PCTitleTranslator implements PacketTranslator<ServerTitlePacket> {
                 break;
             case SUBTITLE:
                 bedrockPacket.setType(SetTitlePacket.Type.SET_SUBTITLE);
-                bedrockPacket.setText(MessageTranslator.translate(packet.getSubtitle().getText()));
+                bedrockPacket.setText(MessageTranslator.translate(packet.getTitle().getText()));
                 break;
             case RESET:
                 bedrockPacket.setType(SetTitlePacket.Type.RESET_TITLE);
@@ -64,6 +62,6 @@ public class PCTitleTranslator implements PacketTranslator<ServerTitlePacket> {
                 break;
         }
 
-        session.getBedrockSession().sendPacketImmediately(bedrockPacket);
+        session.sendPacketImmediately(bedrockPacket);
     }
 }

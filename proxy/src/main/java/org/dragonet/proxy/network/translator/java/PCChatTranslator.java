@@ -12,13 +12,9 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
  * You can view the LICENSE file for more details.
  *
- * @author Dragonet Foundation
- * @link https://github.com/DragonetMC/DragonProxy
+ * https://github.com/DragonetMC/DragonProxy
  */
 package org.dragonet.proxy.network.translator.java;
 
@@ -29,12 +25,14 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.dragonet.proxy.network.session.ProxySession;
-import org.dragonet.proxy.network.translator.types.MessageTranslator;
 import org.dragonet.proxy.network.translator.PacketTranslator;
+import org.dragonet.proxy.network.translator.annotations.PCPacketTranslator;
+import org.dragonet.proxy.network.translator.types.MessageTranslator;
 
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
+
 @Log4j2
-public class PCChatTranslator implements PacketTranslator<ServerChatPacket> {
+@PCPacketTranslator(packetClass = ServerChatPacket.class)
+public class PCChatTranslator extends PacketTranslator<ServerChatPacket> {
     public static final PCChatTranslator INSTANCE = new PCChatTranslator();
 
     @Override
@@ -50,6 +48,7 @@ public class PCChatTranslator implements PacketTranslator<ServerChatPacket> {
                 break;
             case NOTIFICATION:
                 textPacket.setType(TextPacket.Type.TIP);
+                break;
             case SYSTEM:
                 textPacket.setType(TextPacket.Type.SYSTEM);
                 break;
@@ -68,6 +67,6 @@ public class PCChatTranslator implements PacketTranslator<ServerChatPacket> {
             textPacket.setMessage(MessageTranslator.translate(packet.getMessage()));
         }
 
-        session.getBedrockSession().sendPacket(textPacket);
+        session.sendPacket(textPacket);
     }
 }

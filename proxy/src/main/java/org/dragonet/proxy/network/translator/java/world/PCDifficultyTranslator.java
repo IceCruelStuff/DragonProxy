@@ -12,15 +12,11 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
  * You can view the LICENSE file for more details.
  *
- * @author Dragonet Foundation
- * @link https://github.com/DragonetMC/DragonProxy
+ * https://github.com/DragonetMC/DragonProxy
  */
-package org.dragonet.proxy.network.translator.java;
+package org.dragonet.proxy.network.translator.java.world;
 
 import com.github.steveice10.mc.protocol.packet.ingame.server.ServerDifficultyPacket;
 import com.nukkitx.protocol.bedrock.packet.SetDifficultyPacket;
@@ -28,16 +24,16 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.dragonet.proxy.network.session.ProxySession;
 import org.dragonet.proxy.network.translator.PacketTranslator;
+import org.dragonet.proxy.network.translator.annotations.PCPacketTranslator;
 
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
-public class PCDifficultyTranslator implements PacketTranslator<ServerDifficultyPacket> {
+@PCPacketTranslator(packetClass = ServerDifficultyPacket.class)
+public class PCDifficultyTranslator extends PacketTranslator<ServerDifficultyPacket> {
     public static final PCDifficultyTranslator INSTANCE = new PCDifficultyTranslator();
 
     @Override
     public void translate(ProxySession session, ServerDifficultyPacket packet) {
         SetDifficultyPacket bedrockPacket = new SetDifficultyPacket();
         bedrockPacket.setDifficulty(packet.getDifficulty().ordinal());
-
-        session.getBedrockSession().sendPacket(bedrockPacket);
+        session.sendPacket(bedrockPacket);
     }
 }

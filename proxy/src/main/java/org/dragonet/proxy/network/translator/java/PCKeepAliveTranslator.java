@@ -12,25 +12,26 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
  * You can view the LICENSE file for more details.
  *
- * @author Dragonet Foundation
- * @link https://github.com/DragonetMC/DragonProxy
+ * https://github.com/DragonetMC/DragonProxy
  */
-package org.dragonet.proxy.network.translator.java.entity;
+package org.dragonet.proxy.network.translator.java;
 
-import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerEntityHeadLookPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.client.ClientKeepAlivePacket;
+import com.github.steveice10.mc.protocol.packet.ingame.server.ServerKeepAlivePacket;
+import lombok.extern.log4j.Log4j2;
 import org.dragonet.proxy.network.session.ProxySession;
 import org.dragonet.proxy.network.translator.PacketTranslator;
+import org.dragonet.proxy.network.translator.annotations.PCPacketTranslator;
 
-public class PCEntityHeadlookPacketTranslator implements PacketTranslator<ServerEntityHeadLookPacket> {
-    public static final PCEntityHeadlookPacketTranslator INSTANCE = new PCEntityHeadlookPacketTranslator();
+@Log4j2
+@PCPacketTranslator(packetClass = ServerKeepAlivePacket.class)
+public class PCKeepAliveTranslator extends PacketTranslator<ServerKeepAlivePacket> {
 
     @Override
-    public void translate(ProxySession session, ServerEntityHeadLookPacket packet) {
-
+    public void translate(ProxySession session, ServerKeepAlivePacket packet) {
+        session.sendRemotePacket(new ClientKeepAlivePacket(packet.getPingId()));
     }
 }
+

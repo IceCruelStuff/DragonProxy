@@ -12,13 +12,9 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
  * You can view the LICENSE file for more details.
  *
- * @author Dragonet Foundation
- * @link https://github.com/DragonetMC/DragonProxy
+ * https://github.com/DragonetMC/DragonProxy
  */
 package org.dragonet.proxy.network;
 
@@ -28,21 +24,13 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.nimbusds.jose.JWSObject;
-import com.nukkitx.protocol.bedrock.BedrockPacket;
 import com.nukkitx.protocol.bedrock.BedrockServerSession;
 import com.nukkitx.protocol.bedrock.handler.BedrockPacketHandler;
 import com.nukkitx.protocol.bedrock.packet.*;
-
 import com.nukkitx.protocol.bedrock.util.EncryptionUtils;
 import lombok.extern.log4j.Log4j2;
-import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
-import net.minidev.json.JSONValue;
 import org.dragonet.proxy.DragonProxy;
-import org.dragonet.proxy.form.CustomForm;
-import org.dragonet.proxy.form.Form;
-import org.dragonet.proxy.form.components.InputComponent;
-import org.dragonet.proxy.form.components.LabelComponent;
 import org.dragonet.proxy.network.session.ProxySession;
 import org.dragonet.proxy.network.session.data.AuthData;
 import org.dragonet.proxy.network.session.data.AuthState;
@@ -51,11 +39,9 @@ import org.dragonet.proxy.network.translator.PacketTranslatorRegistry;
 import org.dragonet.proxy.remote.RemoteAuthType;
 import org.dragonet.proxy.remote.RemoteServer;
 import org.dragonet.proxy.util.BedrockLoginUtils;
-import org.dragonet.proxy.util.TextFormat;
 
 import java.io.IOException;
 import java.security.interfaces.ECPublicKey;
-import java.text.ParseException;
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 
@@ -79,7 +65,11 @@ public class UpstreamPacketHandler implements BedrockPacketHandler {
         // Check for supported protocol
         int index = Arrays.binarySearch(DragonProxy.BEDROCK_SUPPORTED_PROTOCOLS, packet.getProtocolVersion());
         if (index < 0) {
-            session.getBedrockSession().disconnect();
+            // Set a codec so we can disconnect them
+            session.getBedrockSession().setPacketCodec(DragonProxy.BEDROCK_CODEC);
+
+            // TODO: This message will never actually be displayed because the bedrock client is weird
+            session.getBedrockSession().disconnect("Please use " + DragonProxy.BEDROCK_CODEC.getMinecraftVersion());
             return true;
         }
         session.getBedrockSession().setPacketCodec(DragonProxy.BEDROCK_SUPPORTED_CODECS[index]);
@@ -144,11 +134,11 @@ public class UpstreamPacketHandler implements BedrockPacketHandler {
         // Tell the Bedrock client login was successful
         PlayStatusPacket playStatus = new PlayStatusPacket();
         playStatus.setStatus(PlayStatusPacket.Status.LOGIN_SUCCESS);
-        session.getBedrockSession().sendPacketImmediately(playStatus);
+        session.sendPacketImmediately(playStatus);
 
         // Start Resource pack handshake
         ResourcePacksInfoPacket resourcePacksInfo = new ResourcePacksInfoPacket();
-        session.getBedrockSession().sendPacketImmediately(resourcePacksInfo);
+        session.sendPacketImmediately(resourcePacksInfo);
         return true;
     }
 
@@ -171,7 +161,7 @@ public class UpstreamPacketHandler implements BedrockPacketHandler {
                 ResourcePackStackPacket stack = new ResourcePackStackPacket();
                 stack.setExperimental(false);
                 stack.setForcedToAccept(false);
-                session.getBedrockSession().sendPacketImmediately(stack);
+                session.sendPacketImmediately(stack);
                 break;
             default:
                 // Anything else shouldn't happen so disconnect
@@ -189,7 +179,7 @@ public class UpstreamPacketHandler implements BedrockPacketHandler {
             session.sendLoginForm(); // TODO: remove
             return true;
         }
-        //PacketTranslatorRegistry.BEDROCK_TO_JAVA.translate(session, packet);
+        PacketTranslatorRegistry.BEDROCK_TO_JAVA.translate(session, packet);
         return true;
     }
 
@@ -207,6 +197,12 @@ public class UpstreamPacketHandler implements BedrockPacketHandler {
 
             future.complete(new JsonParser().parse(packet.getFormData()).getAsJsonArray());
         }
+        return true;
+    }
+
+    @Override
+    public boolean handle(SetLocalPlayerAsInitializedPacket packet) {
+        session.spawn(packet.getRuntimeEntityId());
         return true;
     }
 

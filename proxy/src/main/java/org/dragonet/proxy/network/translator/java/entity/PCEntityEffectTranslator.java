@@ -12,33 +12,31 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
  * You can view the LICENSE file for more details.
  *
- * @author Dragonet Foundation
- * @link https://github.com/DragonetMC/DragonProxy
+ * https://github.com/DragonetMC/DragonProxy
  */
 package org.dragonet.proxy.network.translator.java.entity;
 
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerEntityEffectPacket;
 import com.nukkitx.protocol.bedrock.packet.MobEffectPacket;
 import lombok.extern.log4j.Log4j2;
-import org.dragonet.proxy.network.session.cache.object.CachedEntity;
 import org.dragonet.proxy.network.session.ProxySession;
+import org.dragonet.proxy.network.session.cache.object.CachedEntity;
 import org.dragonet.proxy.network.translator.PacketTranslator;
+import org.dragonet.proxy.network.translator.annotations.PCPacketTranslator;
 import org.dragonet.proxy.network.translator.types.EntityEffectTranslator;
 
 @Log4j2
-public class PCEntityEffectTranslator implements PacketTranslator<ServerEntityEffectPacket> {
+@PCPacketTranslator(packetClass = ServerEntityEffectPacket.class)
+public class PCEntityEffectTranslator extends PacketTranslator<ServerEntityEffectPacket> {
     public static final PCEntityEffectTranslator INSTANCE = new PCEntityEffectTranslator();
 
     @Override
     public void translate(ProxySession session, ServerEntityEffectPacket packet) {
-        CachedEntity cachedEntity = session.getEntityCache().getById(packet.getEntityId());
+        CachedEntity cachedEntity = session.getEntityCache().getByRemoteId(packet.getEntityId());
         if(cachedEntity == null) {
-            log.info("(debug) EntityEffectTranslator: Cached entity is null");
+            //log.info("(debug) EntityEffectTranslator: Cached entity is null");
             return;
         }
 
@@ -53,7 +51,7 @@ public class PCEntityEffectTranslator implements PacketTranslator<ServerEntityEf
         mobEffectPacket.setEffectId(effect.ordinal() + 1); // We add 1 as enums begin at 0
         mobEffectPacket.setAmplifier(packet.getAmplifier());
         mobEffectPacket.setDuration(packet.getDuration());
-        mobEffectPacket.setParticles(packet.getShowParticles());
+        mobEffectPacket.setParticles(packet.isShowParticles());
 
         if(cachedEntity.getEffects().contains(effect)) {
             mobEffectPacket.setEvent(MobEffectPacket.Event.MODIFY);
@@ -61,7 +59,7 @@ public class PCEntityEffectTranslator implements PacketTranslator<ServerEntityEf
             mobEffectPacket.setEvent(MobEffectPacket.Event.ADD);
         }
 
-        session.getBedrockSession().sendPacket(mobEffectPacket);
+        session.sendPacket(mobEffectPacket);
 
         // Add the effect to the cached entity so we can check it later
         cachedEntity.getEffects().add(effect);

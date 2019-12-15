@@ -12,24 +12,21 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
  * You can view the LICENSE file for more details.
  *
- * @author Dragonet Foundation
- * @link https://github.com/DragonetMC/DragonProxy
+ * https://github.com/DragonetMC/DragonProxy
  */
 package org.dragonet.proxy.command.defaults;
 
-import com.github.steveice10.mc.protocol.data.game.statistic.*;
+import com.github.steveice10.mc.protocol.data.game.statistic.GenericStatistic;
+import com.github.steveice10.mc.protocol.data.game.statistic.Statistic;
 import org.dragonet.proxy.command.ProxyCommand;
+import org.dragonet.proxy.data.stats.StatInfo;
+import org.dragonet.proxy.data.stats.Statistics;
 import org.dragonet.proxy.form.CustomForm;
 import org.dragonet.proxy.form.components.LabelComponent;
 import org.dragonet.proxy.network.session.ProxySession;
 import org.dragonet.proxy.network.session.cache.WorldCache;
-import org.dragonet.proxy.data.stats.StatInfo;
-import org.dragonet.proxy.data.stats.Statistics;
 import org.dragonet.proxy.util.TextFormat;
 
 import java.util.Map;

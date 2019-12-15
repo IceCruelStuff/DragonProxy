@@ -12,13 +12,9 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
  * You can view the LICENSE file for more details.
  *
- * @author Dragonet Foundation
- * @link https://github.com/DragonetMC/DragonProxy
+ * https://github.com/DragonetMC/DragonProxy
  */
 package org.dragonet.proxy.network.translator.bedrock;
 
@@ -29,9 +25,11 @@ import org.dragonet.proxy.DragonProxy;
 import org.dragonet.proxy.command.CommandManager;
 import org.dragonet.proxy.network.session.ProxySession;
 import org.dragonet.proxy.network.translator.PacketTranslator;
+import org.dragonet.proxy.network.translator.annotations.PEPacketTranslator;
 
 @Log4j2
-public class PECommandRequestTranslator implements PacketTranslator<CommandRequestPacket> {
+@PEPacketTranslator(packetClass = CommandRequestPacket.class)
+public class PECommandRequestTranslator extends PacketTranslator<CommandRequestPacket> {
     public static final PECommandRequestTranslator INSTANCE = new PECommandRequestTranslator();
 
     @Override
@@ -45,6 +43,6 @@ public class PECommandRequestTranslator implements PacketTranslator<CommandReque
         }
 
         ClientChatPacket chatPacket = new ClientChatPacket(packet.getCommand());
-        session.getDownstream().getSession().send(chatPacket);
+        session.sendRemotePacket(chatPacket);
     }
 }
