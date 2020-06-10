@@ -1,6 +1,6 @@
 /*
  * DragonProxy
- * Copyright (C) 2016-2019 Dragonet Foundation
+ * Copyright (C) 2016-2020 Dragonet Foundation
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,20 +18,24 @@
  */
 package org.dragonet.proxy.network.translator.java.entity.spawn;
 
+import com.github.steveice10.mc.protocol.data.game.entity.type.object.FallingBlockData;
+import com.github.steveice10.mc.protocol.data.game.entity.type.object.ObjectType;
+import com.github.steveice10.mc.protocol.data.game.world.block.BlockState;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.spawn.ServerSpawnObjectPacket;
 import com.nukkitx.math.vector.Vector3f;
+import com.nukkitx.protocol.bedrock.data.EntityData;
 import lombok.extern.log4j.Log4j2;
-import org.dragonet.proxy.data.entity.EntityType;
+import org.dragonet.proxy.data.entity.BedrockEntityType;
 import org.dragonet.proxy.network.session.ProxySession;
 import org.dragonet.proxy.network.session.cache.object.CachedEntity;
-import org.dragonet.proxy.network.translator.PacketTranslator;
-import org.dragonet.proxy.network.translator.annotations.PCPacketTranslator;
-import org.dragonet.proxy.network.translator.types.EntityTypeTranslator;
+import org.dragonet.proxy.network.translator.misc.PacketTranslator;
+import org.dragonet.proxy.util.registry.PacketRegisterInfo;
+import org.dragonet.proxy.network.translator.misc.BlockTranslator;
+import org.dragonet.proxy.network.translator.misc.EntityTypeTranslator;
 
 @Log4j2
-@PCPacketTranslator(packetClass = ServerSpawnObjectPacket.class)
+@PacketRegisterInfo(packet = ServerSpawnObjectPacket.class)
 public class PCSpawnObjectTranslator extends PacketTranslator<ServerSpawnObjectPacket> {
-    public static final PCSpawnObjectTranslator INSTANCE = new PCSpawnObjectTranslator();
 
     @Override
     public void translate(ProxySession session, ServerSpawnObjectPacket packet) {
@@ -41,13 +45,27 @@ public class PCSpawnObjectTranslator extends PacketTranslator<ServerSpawnObjectP
             return;
         }
 
-        EntityType entityType = EntityTypeTranslator.translateToBedrock(packet.getType());
+        if(packet.getType() == ObjectType.ITEM_FRAME) {
+            return;
+        }
+
+        BedrockEntityType entityType = EntityTypeTranslator.translateToBedrock(packet.getType());
         if(entityType == null) {
             log.warn("Cannot translate object type: " + packet.getType().name());
             return;
         }
 
-        cachedEntity = session.getEntityCache().newEntity(entityType, packet.getEntityId());
+        if(entityType == BedrockEntityType.ITEM) {
+            cachedEntity = session.getEntityCache().newItemEntity(packet.getEntityId());
+        } else {
+            cachedEntity = session.getEntityCache().newEntity(entityType, packet.getEntityId());
+        }
+
+        if(packet.getData() instanceof FallingBlockData) {
+            FallingBlockData fallingBlockData = (FallingBlockData) packet.getData();
+            cachedEntity.getMetadata().put(EntityData.VARIANT, BlockTranslator.translateToBedrock(new BlockState(fallingBlockData.getId())));
+        }
+
         cachedEntity.setJavaUuid(packet.getUuid());
         cachedEntity.setPosition(Vector3f.from(packet.getX(), packet.getY(), packet.getZ()));
         cachedEntity.setMotion(Vector3f.from(packet.getMotionX(), packet.getMotionY(), packet.getMotionZ()));

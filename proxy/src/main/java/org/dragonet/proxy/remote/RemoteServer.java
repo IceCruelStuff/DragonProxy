@@ -1,6 +1,6 @@
 /*
  * DragonProxy
- * Copyright (C) 2016-2019 Dragonet Foundation
+ * Copyright (C) 2016-2020 Dragonet Foundation
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,10 @@ package org.dragonet.proxy.remote;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * Represents a remote server.
+ * This class is constructed based on a remote server defined in the config.
+ */
 @RequiredArgsConstructor
 @Getter
 public final class RemoteServer {

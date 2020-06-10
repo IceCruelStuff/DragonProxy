@@ -1,6 +1,6 @@
 /*
  * DragonProxy
- * Copyright (C) 2016-2019 Dragonet Foundation
+ * Copyright (C) 2016-2020 Dragonet Foundation
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,14 +19,14 @@
 package org.dragonet.proxy.data.stats;
 
 import com.github.steveice10.mc.protocol.data.game.statistic.GenericStatistic;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import lombok.extern.log4j.Log4j2;
 
-import java.util.HashMap;
 import java.util.Map;
 
 @Log4j2
 public class Statistics {
-    private static Map<GenericStatistic, StatInfo> statMap = new HashMap<>();
+    private static Map<GenericStatistic, StatInfo> statMap = new Object2ObjectOpenHashMap<>();
 
     static {
         statMap.put(GenericStatistic.LEAVE_GAME, new StatInfo("Games Quit", StatMeasurement.NONE));
@@ -103,7 +103,7 @@ public class Statistics {
         if(statMap.containsKey(statistic)) {
             return statMap.get(statistic);
         }
-        log.warn("Statistic " + statistic.name() + " is not in the map!");
+        log.warn("No mapping for " + statistic.name() + "!");
         return null;
     }
 }

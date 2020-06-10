@@ -1,6 +1,6 @@
 /*
  * DragonProxy
- * Copyright (C) 2016-2019 Dragonet Foundation
+ * Copyright (C) 2016-2020 Dragonet Foundation
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,20 +20,24 @@ package org.dragonet.proxy.network.session.data;
 
 import com.fasterxml.jackson.annotation.JsonEnumDefaultValue;
 
-public enum DeviceOS {
-    @JsonEnumDefaultValue
-    UNKNOWN,
-    ANDROID,
-    IOS,
-    OSX,
-    FIREOS,
-    GEARVR,
-    HOLOLENS,
-    WIN10,
-    WIN32,
-    DEDICATED,
-    TV_OS,
-    ORBIS,
-    NX,
-    XBOXONE
-}
+    /**
+     * Represents all possible device operating system types
+     * specified in the bedrock LoginPacket.
+     */
+    public enum DeviceOS {
+        @JsonEnumDefaultValue
+        UNKNOWN,
+        ANDROID,
+        IOS,
+        OSX,
+        FIREOS,
+        GEARVR,
+        HOLOLENS,
+        WIN10,
+        WIN32,
+        DEDICATED,
+        TV_OS,
+        ORBIS,
+        NX,
+        XBOXONE
+    }

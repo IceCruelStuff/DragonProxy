@@ -1,6 +1,6 @@
 /*
  * DragonProxy
- * Copyright (C) 2016-2019 Dragonet Foundation
+ * Copyright (C) 2016-2020 Dragonet Foundation
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,11 +21,15 @@ package org.dragonet.proxy.configuration;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
+import lombok.Setter;
 import org.dragonet.proxy.remote.RemoteAuthType;
 
 @Getter
+@Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class DragonConfiguration {
+    @JsonProperty("config-version")
+    private int configVersion;
 
     private String locale = "EN";
 
@@ -41,24 +45,39 @@ public class DragonConfiguration {
     @JsonProperty("max-players")
     private int maxPlayers;
 
-    @JsonProperty("remote-address")
-    private String remoteAddress;
-
-    @JsonProperty("remote-port")
-    private int remotePort;
-
-    @JsonProperty("remote-auth")
-    private RemoteAuthType remoteAuthType;
-
     @JsonProperty("xbox-auth")
     private boolean xboxAuth;
 
     @JsonProperty("ping-passthrough")
     private boolean pingPassthrough;
 
-    @JsonProperty("fetch-player-skins")
-    private boolean fetchPlayerSkins;
+    @JsonProperty("remote-server")
+    private RemoteServerConfig remoteServer;
+
+    @JsonProperty("player-settings")
+    private PlayerConfig playerConfig;
 
     @JsonProperty("thread-pool-size")
     private int threadPoolSize;
+
+    @Getter
+    @Setter
+    public static class RemoteServerConfig {
+        private String address;
+        private int port;
+        @JsonProperty("auth-type")
+        private RemoteAuthType authType;
+    }
+
+    @Getter
+    public static class PlayerConfig {
+        @JsonProperty("enable-commands")
+        private boolean commandsEnabled;
+
+        @JsonProperty("auto-jump")
+        private boolean autoJump;
+
+        @JsonProperty("fetch-skins")
+        private boolean fetchSkin;
+    }
 }

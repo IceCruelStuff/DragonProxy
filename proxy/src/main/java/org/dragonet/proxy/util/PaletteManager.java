@@ -1,6 +1,6 @@
 /*
  * DragonProxy
- * Copyright (C) 2016-2019 Dragonet Foundation
+ * Copyright (C) 2016-2020 Dragonet Foundation
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,141 +18,121 @@
  */
 package org.dragonet.proxy.util;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.type.CollectionType;
-import com.nukkitx.network.VarInts;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectReader;
+import com.nukkitx.nbt.NbtUtils;
+import com.nukkitx.nbt.stream.NBTInputStream;
+import com.nukkitx.nbt.tag.CompoundTag;
+import com.nukkitx.nbt.tag.ListTag;
 import com.nukkitx.protocol.bedrock.packet.StartGamePacket;
-import com.nukkitx.protocol.bedrock.v361.BedrockUtils;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import it.unimi.dsi.fastutil.ints.Int2IntArrayMap;
 import lombok.Getter;
+import lombok.extern.log4j.Log4j2;
 import org.dragonet.proxy.DragonProxy;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Getter
+@Log4j2
 public class PaletteManager {
-    private ByteBuf cachedPalette;
-    private List<StartGamePacket.ItemEntry> itemEntries;
-    private static final Int2IntArrayMap legacyToRuntimeId = new Int2IntArrayMap();
-    private static final Int2IntArrayMap runtimeIdToLegacy = new Int2IntArrayMap();
-    private static final AtomicInteger runtimeIdAllocator = new AtomicInteger(0);
+    public static final List<StartGamePacket.ItemEntry> ITEM_PALETTE = new ArrayList<>();
+    public static ListTag<CompoundTag> BLOCK_PALETTE;
 
-    private ArrayList<RuntimeEntry> entries = new ArrayList<>();
+    public static CompoundTag BIOME_ENTRIES;
+    public static CompoundTag ENTITY_IDENTIFIERS;
+    public static final List<RuntimeCreativeItemEntry> CREATIVE_ITEMS = new ArrayList<>();
 
-    public PaletteManager() {
+    static {
         loadBlocks();
         loadItems();
+        loadCreativeItems();
+        loadBiomeData();
+        loadEntityIdentifiers();
     }
 
-    private void loadBlocks() {
-        InputStream stream = DragonProxy.class.getClassLoader().getResourceAsStream("data/runtimeid_table.json");
+    /**
+     * Loads the block runtime data to cache for later use.
+     */
+    private static void loadBlocks() {
+        // TODO: this is currently handled in BlockTranslator
+    }
+
+    private static void loadItems() {
+        InputStream stream = FileUtils.getResource("data/runtime_item_states.json");
         if (stream == null) {
-            throw new AssertionError("Static Runtime ID table not found");
+            throw new AssertionError("Static item state table not found");
         }
 
-        ObjectMapper mapper = new ObjectMapper();
-        CollectionType type = mapper.getTypeFactory().constructCollectionType(ArrayList.class, RuntimeEntry.class);
-
-        //ArrayList<RuntimeEntry> entries = new ArrayList<>();
+        List<RuntimeItemEntry> entries;
         try {
-            entries = mapper.readValue(stream, type);
-        } catch (Exception e) {
-            e.printStackTrace();
+            entries = DragonProxy.JSON_MAPPER.readValue(stream, new TypeReference<List<RuntimeItemEntry>>(){});
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
 
-        cachedPalette = Unpooled.buffer();
-
-        VarInts.writeUnsignedInt(cachedPalette, entries.size());
-
-        for (RuntimeEntry entry : entries) {
-            registerMapping((entry.id << 4) | entry.data);
-            BedrockUtils.writeString(cachedPalette, entry.name);
-            cachedPalette.writeShortLE(entry.data);
-            cachedPalette.writeShortLE(entry.id);
-        }
-
+        entries.forEach(entry -> ITEM_PALETTE.add(new StartGamePacket.ItemEntry(entry.getName(), entry.getId())));
     }
 
-    private void loadItems() {
-        InputStream stream = DragonProxy.class.getClassLoader().getResourceAsStream("runtime_item_ids.json");
+    /**
+     * Loads creative items data and then maps the legacy ids
+     * to runtime ids.
+     */
+    private static void loadCreativeItems() {
+        InputStream stream = FileUtils.getResource("data/creative_items.json");
         if (stream == null) {
-            throw new AssertionError("Static Runtime Item ID table not found");
+            throw new RuntimeException("Creative item data not found");
         }
 
-        ObjectMapper mapper = new ObjectMapper();
-        CollectionType type = mapper.getTypeFactory().constructCollectionType(ArrayList.class, RuntimeEntry.class);
-
-        ArrayList<RuntimeEntry> entries = new ArrayList<>();
+        ObjectReader objectReader = DragonProxy.JSON_MAPPER.reader(new TypeReference<List<RuntimeCreativeItemEntry>>() {}).withRootName("items");
         try {
-            entries = mapper.readValue(stream, type);
+            CREATIVE_ITEMS.addAll(objectReader.readValue(stream));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Loads the biome definitions to cache for later use.
+     * This is currently not used anywhere, but will be at some point.
+     */
+    private static void loadBiomeData() {
+        InputStream stream = FileUtils.getResource("data/biome_definitions.dat");
+        if (stream == null) {
+            throw new AssertionError("Biome data table not found");
+        }
+
+        try(NBTInputStream nbtInputStream = NbtUtils.createNetworkReader(stream)) {
+            BIOME_ENTRIES = (CompoundTag) nbtInputStream.readTag();
         } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        itemEntries = new ArrayList<>();
-
-        for(RuntimeEntry entry : entries) {
-            itemEntries.add(new StartGamePacket.ItemEntry(entry.name, (short) entry.id));
+            throw new RuntimeException(e);
         }
     }
 
-    public static int getOrCreateRuntimeId(int id, int meta) {
-        return getOrCreateRuntimeId((id << 4) | meta);
-    }
-
-    public static int getOrCreateRuntimeId(int legacyId) throws NoSuchElementException {
-        int runtimeId = legacyToRuntimeId.get(legacyId);
-        if (runtimeId == -1) {
-            throw new NoSuchElementException("Unmapped block registered id:" + (legacyId >>> 4) + " meta:" + (legacyId & 0xf));
+    private static void loadEntityIdentifiers() {
+        InputStream stream = FileUtils.getResource("data/entity_identifiers.dat");
+        if (stream == null) {
+            throw new AssertionError("Entity identifiers table not found");
         }
-        return runtimeId;
-    }
 
-    public static int fromLegacy(int id, byte data) {
-        int runtimeId;
-        if ((runtimeId = legacyToRuntimeId.get((id << 4) | data)) == -1) {
-            throw new IllegalArgumentException("Unknown legacy id");
+        try(NBTInputStream nbtInputStream = NbtUtils.createNetworkReader(stream)) {
+            ENTITY_IDENTIFIERS = (CompoundTag) nbtInputStream.readTag();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-        return runtimeId;
-    }
-
-    public static int getLegacyId(int runtimeId) {
-        int legacyId;
-        if ((legacyId = runtimeIdToLegacy.get(runtimeId)) == -1) {
-            throw new IllegalArgumentException("Unknown runtime id");
-        }
-        return legacyId;
-    }
-
-    private static int registerMapping(int legacyId) {
-        int runtimeId = runtimeIdAllocator.getAndIncrement();
-        runtimeIdToLegacy.put(runtimeId, legacyId);
-        legacyToRuntimeId.put(legacyId, runtimeId);
-        return runtimeId;
     }
 
     @Getter
-    public static class RuntimeEntry {
-        @JsonProperty("name")
+    public static class RuntimeItemEntry {
         private String name;
-        @JsonProperty("id")
+        private short id;
+    }
+
+    @Getter
+    public static class RuntimeCreativeItemEntry {
         private int id;
-        @JsonProperty("data")
-        private int data;
-
-        public RuntimeEntry() {}
-
-        public RuntimeEntry(String name, int id, int data) {
-            this.id = id;
-            this.name = name;
-            this.data = data;
-        }
+        private int damage;
+        // TODO: nbt
     }
 }

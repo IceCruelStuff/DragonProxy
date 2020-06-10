@@ -1,6 +1,6 @@
 /*
  * DragonProxy
- * Copyright (C) 2016-2019 Dragonet Foundation
+ * Copyright (C) 2016-2020 Dragonet Foundation
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,13 +22,13 @@ import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerEntit
 import lombok.extern.log4j.Log4j2;
 import org.dragonet.proxy.network.session.ProxySession;
 import org.dragonet.proxy.network.session.cache.object.CachedEntity;
-import org.dragonet.proxy.network.translator.PacketTranslator;
-import org.dragonet.proxy.network.translator.annotations.PCPacketTranslator;
+import org.dragonet.proxy.network.session.cache.object.CachedPlayer;
+import org.dragonet.proxy.network.translator.misc.PacketTranslator;
+import org.dragonet.proxy.util.registry.PacketRegisterInfo;
 
 @Log4j2
-@PCPacketTranslator(packetClass = ServerEntityDestroyPacket.class)
+@PacketRegisterInfo(packet = ServerEntityDestroyPacket.class)
 public class PCEntityDestroyTranslator extends PacketTranslator<ServerEntityDestroyPacket> {
-    public static final PCEntityDestroyTranslator INSTANCE = new PCEntityDestroyTranslator();
 
     @Override
     public void translate(ProxySession session, ServerEntityDestroyPacket packet) {
@@ -38,8 +38,14 @@ public class PCEntityDestroyTranslator extends PacketTranslator<ServerEntityDest
                 //log.warn("EntityDestroy: Cached entity doesn't exist");
                 return;
             }
+
+            if(cachedEntity instanceof CachedPlayer && session.getPlayerListCache().getPlayerInfo().get(cachedEntity.getJavaUuid()) != null) {
+                cachedEntity.despawn(session);
+                return;
+            }
+
             log.trace("Destroying entity with proxy eid: " + cachedEntity.getProxyEid());
-            cachedEntity.despawn(session);
+            cachedEntity.destroy(session);
         }
     }
 }

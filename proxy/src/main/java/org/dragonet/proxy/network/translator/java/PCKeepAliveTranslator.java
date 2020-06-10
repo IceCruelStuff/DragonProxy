@@ -1,6 +1,6 @@
 /*
  * DragonProxy
- * Copyright (C) 2016-2019 Dragonet Foundation
+ * Copyright (C) 2016-2020 Dragonet Foundation
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,20 +18,25 @@
  */
 package org.dragonet.proxy.network.translator.java;
 
-import com.github.steveice10.mc.protocol.packet.ingame.client.ClientKeepAlivePacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.ServerKeepAlivePacket;
 import lombok.extern.log4j.Log4j2;
 import org.dragonet.proxy.network.session.ProxySession;
-import org.dragonet.proxy.network.translator.PacketTranslator;
-import org.dragonet.proxy.network.translator.annotations.PCPacketTranslator;
+import org.dragonet.proxy.network.translator.misc.PacketTranslator;
+import org.dragonet.proxy.util.registry.PacketRegisterInfo;
 
 @Log4j2
-@PCPacketTranslator(packetClass = ServerKeepAlivePacket.class)
+@PacketRegisterInfo(packet = ServerKeepAlivePacket.class)
 public class PCKeepAliveTranslator extends PacketTranslator<ServerKeepAlivePacket> {
 
     @Override
     public void translate(ProxySession session, ServerKeepAlivePacket packet) {
-        session.sendRemotePacket(new ClientKeepAlivePacket(packet.getPingId()));
+        // This packet will cause the remote server (in my testing only vanilla servers)
+        // to disconnect the client with a 'Timed out' message.
+        // This is completely the opposite to what is described on wiki.vg:
+        // https://wiki.vg/Protocol#Keep_Alive_.28clientbound.29
+
+        //session.sendRemotePacket(new ClientKeepAlivePacket(packet.getPingId()));
     }
 }
+
 

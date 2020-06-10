@@ -1,6 +1,6 @@
 /*
  * DragonProxy
- * Copyright (C) 2016-2019 Dragonet Foundation
+ * Copyright (C) 2016-2020 Dragonet Foundation
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,32 +18,32 @@
  */
 package org.dragonet.proxy.network.translator.java.entity.spawn;
 
+import com.github.steveice10.mc.protocol.data.game.entity.type.MobType;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.spawn.ServerSpawnMobPacket;
 import com.nukkitx.math.vector.Vector3f;
-import com.nukkitx.protocol.bedrock.data.EntityDataDictionary;
+import com.nukkitx.protocol.bedrock.data.EntityData;
 import lombok.extern.log4j.Log4j2;
-import org.dragonet.proxy.data.entity.EntityType;
+import org.dragonet.proxy.data.entity.BedrockEntityType;
 import org.dragonet.proxy.network.session.ProxySession;
 import org.dragonet.proxy.network.session.cache.object.CachedEntity;
-import org.dragonet.proxy.network.translator.PacketTranslator;
-import org.dragonet.proxy.network.translator.annotations.PCPacketTranslator;
-import org.dragonet.proxy.network.translator.types.EntityMetaTranslator;
-import org.dragonet.proxy.network.translator.types.EntityTypeTranslator;
+import org.dragonet.proxy.network.translator.misc.PacketTranslator;
+import org.dragonet.proxy.util.TextFormat;
+import org.dragonet.proxy.util.registry.PacketRegisterInfo;
+import org.dragonet.proxy.network.translator.misc.EntityTypeTranslator;
 
 @Log4j2
-@PCPacketTranslator(packetClass = ServerSpawnMobPacket.class)
+@PacketRegisterInfo(packet = ServerSpawnMobPacket.class)
 public class PCSpawnMobTranslator extends PacketTranslator<ServerSpawnMobPacket> {
-    public static final PCSpawnMobTranslator INSTANCE = new PCSpawnMobTranslator();
 
     @Override
     public void translate(ProxySession session, ServerSpawnMobPacket packet) {
         CachedEntity cachedEntity = session.getEntityCache().getByRemoteId(packet.getEntityId());
         if(cachedEntity != null) {
-            log.trace("Cached entity already exists, cant spawn a new one");
+            log.info(TextFormat.GRAY + "Cached entity (mob) already exists, cant spawn a new one: " + cachedEntity.getEntityType().name());
             return;
         }
 
-        EntityType entityType = EntityTypeTranslator.translateToBedrock(packet.getType());
+        BedrockEntityType entityType = EntityTypeTranslator.translateToBedrock(packet.getType());
         if(entityType == null) {
             log.warn("Cannot translate mob type: " + packet.getType().name());
             return;
@@ -51,9 +51,12 @@ public class PCSpawnMobTranslator extends PacketTranslator<ServerSpawnMobPacket>
 
         cachedEntity = session.getEntityCache().newEntity(entityType, packet.getEntityId());
 
-        EntityDataDictionary metadata = EntityMetaTranslator.translateToBedrock(cachedEntity, packet.getMetadata());
-        cachedEntity.getMetadata().putAll(metadata);
+        if(packet.getType() == MobType.GIANT) {
+            cachedEntity.setScale(5f);
+            cachedEntity.getMetadata().put(EntityData.SCALE, 5f);
+        }
 
+        cachedEntity.setJavaUuid(packet.getUuid());
         cachedEntity.setPosition(Vector3f.from(packet.getX(), packet.getY(), packet.getZ()));
         cachedEntity.setMotion(Vector3f.from(packet.getMotionX(), packet.getMotionY(), packet.getMotionZ()));
         cachedEntity.setRotation(Vector3f.from(packet.getPitch(), packet.getHeadYaw(), packet.getYaw()));

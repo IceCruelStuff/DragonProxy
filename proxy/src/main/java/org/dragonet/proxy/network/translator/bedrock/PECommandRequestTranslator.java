@@ -1,6 +1,6 @@
 /*
  * DragonProxy
- * Copyright (C) 2016-2019 Dragonet Foundation
+ * Copyright (C) 2016-2020 Dragonet Foundation
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,25 +24,23 @@ import lombok.extern.log4j.Log4j2;
 import org.dragonet.proxy.DragonProxy;
 import org.dragonet.proxy.command.CommandManager;
 import org.dragonet.proxy.network.session.ProxySession;
-import org.dragonet.proxy.network.translator.PacketTranslator;
-import org.dragonet.proxy.network.translator.annotations.PEPacketTranslator;
+import org.dragonet.proxy.network.translator.misc.PacketTranslator;
+import org.dragonet.proxy.util.registry.PacketRegisterInfo;
 
 @Log4j2
-@PEPacketTranslator(packetClass = CommandRequestPacket.class)
+@PacketRegisterInfo(packet = CommandRequestPacket.class)
 public class PECommandRequestTranslator extends PacketTranslator<CommandRequestPacket> {
-    public static final PECommandRequestTranslator INSTANCE = new PECommandRequestTranslator();
 
     @Override
     public void translate(ProxySession session, CommandRequestPacket packet) {
+        // Proxy commands
         CommandManager commandManager = DragonProxy.INSTANCE.getCommandManager();
-        // TODO: better command management
         String command = packet.getCommand().replace("/", "");
         if(commandManager.getCommands().containsKey(command)) {
             commandManager.executeCommand(session, command);
             return;
         }
 
-        ClientChatPacket chatPacket = new ClientChatPacket(packet.getCommand());
-        session.sendRemotePacket(chatPacket);
+        session.sendRemotePacket(new ClientChatPacket(packet.getCommand()));
     }
 }

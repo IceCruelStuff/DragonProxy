@@ -1,6 +1,6 @@
 /*
  * DragonProxy
- * Copyright (C) 2016-2019 Dragonet Foundation
+ * Copyright (C) 2016-2020 Dragonet Foundation
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,48 +22,59 @@ import com.github.steveice10.mc.protocol.data.status.ServerStatusInfo;
 import com.nukkitx.protocol.bedrock.BedrockPong;
 import com.nukkitx.protocol.bedrock.BedrockServerEventHandler;
 import com.nukkitx.protocol.bedrock.BedrockServerSession;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.dragonet.proxy.DragonProxy;
 import org.dragonet.proxy.configuration.DragonConfiguration;
+import sun.print.resources.serviceui;
 
+import javax.annotation.Nonnull;
 import java.net.InetSocketAddress;
 
-@AllArgsConstructor
+/**
+ * Handles the bedrock client raknet ping.
+ */
+@Log4j2
+@RequiredArgsConstructor
 public class ProxyServerEventListener implements BedrockServerEventHandler {
+    private static final BedrockPong pong = new BedrockPong();
 
-    public DragonProxy proxy;
+    private final DragonProxy proxy;
 
-    @Override
-    public boolean onConnectionRequest(InetSocketAddress address) {
-        return true;
-    }
-
-    @Override
-    public BedrockPong onQuery(InetSocketAddress address) {
-        DragonConfiguration config = proxy.getConfiguration();
-
-        BedrockPong pong = new BedrockPong();
+    static {
         pong.setEdition("MCPE");
         pong.setGameType("Default");
         pong.setNintendoLimited(false);
         pong.setProtocolVersion(DragonProxy.BEDROCK_CODEC.getProtocolVersion());
-        pong.setIpv4Port(config.getBindPort());
+        pong.setVersion(null); //Do we really want this added to the MOTD?
+        pong.setIpv4Port(DragonProxy.INSTANCE.getConfiguration().getBindPort());
+    }
 
+    @Override
+    public boolean onConnectionRequest(@Nonnull InetSocketAddress address) {
+        return true;
+    }
+
+    @Override
+    public BedrockPong onQuery(@Nonnull InetSocketAddress address) {
+        DragonConfiguration config = proxy.getConfiguration();
+
+        ServerStatusInfo serverInfo = null;
         if (config.isPingPassthrough()) {
-            ServerStatusInfo serverInfo = proxy.getPingPassthroughThread().getInfo();
-
-            if (serverInfo != null) {
-                pong.setMotd(serverInfo.getDescription().getText());
-                pong.setSubMotd(config.getMotd2());
-                pong.setPlayerCount(serverInfo.getPlayerInfo().getOnlinePlayers());
-                pong.setMaximumPlayerCount(serverInfo.getPlayerInfo().getMaxPlayers());
-            }
-        } else {
-            pong.setPlayerCount(0);
-            pong.setMaximumPlayerCount(config.getMaxPlayers());
-            pong.setMotd(config.getMotd());
-            pong.setSubMotd(config.getMotd2());
+            serverInfo = proxy.getPingPassthroughThread().getStatusInfo();
         }
+
+        if (serverInfo != null) {
+            pong.setMaximumPlayerCount(serverInfo.getPlayerInfo().getMaxPlayers() + 1);
+            pong.setPlayerCount(serverInfo.getPlayerInfo().getOnlinePlayers());
+        } else {
+            pong.setPlayerCount(proxy.getSessionManager().getPlayerCount());
+            pong.setMaximumPlayerCount(config.getMaxPlayers());
+        }
+
+        // Java MOTD never look good on Bedrock. This should never passthrough
+        pong.setMotd(config.getMotd());
+        pong.setSubMotd(config.getMotd2());
 
         return pong;
     }
@@ -71,6 +82,6 @@ public class ProxyServerEventListener implements BedrockServerEventHandler {
     @Override
     public void onSessionCreation(BedrockServerSession session) {
         session.setLogging(true);
-        session.setPacketHandler(new UpstreamPacketHandler(proxy, session));
+        session.setPacketHandler(new UpstreamPacketHandler(proxy, proxy.getSessionManager().newSession(proxy, session)));
     }
 }

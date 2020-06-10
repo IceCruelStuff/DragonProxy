@@ -1,6 +1,6 @@
 /*
  * DragonProxy
- * Copyright (C) 2016-2019 Dragonet Foundation
+ * Copyright (C) 2016-2020 Dragonet Foundation
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,37 +18,29 @@
  */
 package org.dragonet.proxy.network.translator.java.player;
 
-import com.github.steveice10.mc.protocol.data.game.ClientRequest;
-import com.github.steveice10.mc.protocol.packet.ingame.client.ClientRequestPacket;
-import com.github.steveice10.mc.protocol.packet.ingame.server.entity.player.ServerPlayerAbilitiesPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.player.ServerPlayerHealthPacket;
-import com.nukkitx.protocol.bedrock.packet.AdventureSettingsPacket;
-import com.nukkitx.protocol.bedrock.packet.RespawnPacket;
-import com.nukkitx.protocol.bedrock.packet.SetHealthPacket;
+import lombok.extern.log4j.Log4j2;
+import org.dragonet.proxy.data.entity.BedrockAttributeType;
 import org.dragonet.proxy.network.session.ProxySession;
-import org.dragonet.proxy.network.session.cache.object.CachedPlayer;
-import org.dragonet.proxy.network.translator.PacketTranslator;
-import org.dragonet.proxy.network.translator.annotations.PCPacketTranslator;
+import org.dragonet.proxy.network.session.cache.object.CachedEntity;
+import org.dragonet.proxy.network.translator.misc.PacketTranslator;
+import org.dragonet.proxy.util.registry.PacketRegisterInfo;
 
 
-@PCPacketTranslator(packetClass = ServerPlayerHealthPacket.class)
+@Log4j2
+@PacketRegisterInfo(packet = ServerPlayerHealthPacket.class)
 public class PCPlayerHealthTranslator extends PacketTranslator<ServerPlayerHealthPacket> {
 
     @Override
     public void translate(ProxySession session, ServerPlayerHealthPacket packet) {
-        SetHealthPacket setHealthPacket = new SetHealthPacket();
-        setHealthPacket.setHealth((int) Math.ceil(packet.getHealth()));
-        session.sendPacket(setHealthPacket);
+        CachedEntity cachedEntity = session.getCachedEntity();
+        int health = (int) Math.ceil(packet.getHealth());
 
-        if(packet.getHealth() <= 0) {
-            RespawnPacket respawnPacket = new RespawnPacket();
-            respawnPacket.setPosition(session.getCachedEntity().getSpawnPosition());
-            session.sendPacket(respawnPacket);
+        // TODO: actually set max health properly
+        cachedEntity.getAttributes().put(BedrockAttributeType.HEALTH, BedrockAttributeType.HEALTH.create(health, 20f));
+        cachedEntity.getAttributes().put(BedrockAttributeType.HUNGER, BedrockAttributeType.HUNGER.create(packet.getFood()));
+        cachedEntity.getAttributes().put(BedrockAttributeType.SATURATION, BedrockAttributeType.SATURATION.create(packet.getSaturation()));
 
-            // Tell the server we are ready to respawn
-            session.sendRemotePacket(new ClientRequestPacket(ClientRequest.RESPAWN));
-        }
-
-        // TODO: update attributes
+        cachedEntity.sendAttributes(session);
     }
 }

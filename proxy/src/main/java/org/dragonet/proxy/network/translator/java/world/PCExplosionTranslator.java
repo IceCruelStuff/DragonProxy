@@ -1,6 +1,6 @@
 /*
  * DragonProxy
- * Copyright (C) 2016-2019 Dragonet Foundation
+ * Copyright (C) 2016-2020 Dragonet Foundation
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,31 +18,28 @@
  */
 package org.dragonet.proxy.network.translator.java.world;
 
+import com.github.steveice10.mc.protocol.data.game.world.block.BlockState;
+import com.github.steveice10.mc.protocol.data.game.world.block.ExplodedBlockRecord;
 import com.github.steveice10.mc.protocol.packet.ingame.server.world.ServerExplosionPacket;
-import com.nukkitx.math.vector.Vector3f;
 import com.nukkitx.math.vector.Vector3i;
-import com.nukkitx.protocol.bedrock.packet.ExplodePacket;
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
+import com.nukkitx.protocol.bedrock.packet.LevelEventPacket;
 import org.dragonet.proxy.network.session.ProxySession;
-import org.dragonet.proxy.network.translator.PacketTranslator;
-import org.dragonet.proxy.network.translator.annotations.PCPacketTranslator;
+import org.dragonet.proxy.network.translator.misc.PacketTranslator;
+import org.dragonet.proxy.util.registry.PacketRegisterInfo;
 
 
-@PCPacketTranslator(packetClass = ServerExplosionPacket.class)
+@PacketRegisterInfo(packet = ServerExplosionPacket.class)
 public class PCExplosionTranslator extends PacketTranslator<ServerExplosionPacket> {
-    public static final PCExplosionTranslator INSTANCE = new PCExplosionTranslator();
 
     @Override
     public void translate(ProxySession session, ServerExplosionPacket packet) {
-        ExplodePacket explodePacket = new ExplodePacket();
-        explodePacket.setPosition(Vector3f.from(packet.getX(), packet.getY(), packet.getZ()));
-        explodePacket.setRadius(packet.getRadius());
+        for(ExplodedBlockRecord record : packet.getExploded()) {
+            Vector3i position = Vector3i.from(record.getX(), record.getY(), record.getZ());
+            session.getChunkCache().updateBlock(session, position, new BlockState(0));
+        }
 
-        packet.getExploded().forEach((record) -> {
-            explodePacket.getRecords().add(Vector3i.from(record.getX(), record.getY(), record.getZ()));
-        });
-
-        session.sendPacket(explodePacket);
+        LevelEventPacket levelEventPacket = new LevelEventPacket();
+        //levelEventPacket.setEvent(LevelEventPacket.Event.PARTICLE_EXPLODE);
+        //levelEventPacket.setData(16);
     }
 }

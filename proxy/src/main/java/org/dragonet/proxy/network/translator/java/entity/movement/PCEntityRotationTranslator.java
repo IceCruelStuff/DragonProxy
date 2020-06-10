@@ -1,6 +1,6 @@
 /*
  * DragonProxy
- * Copyright (C) 2016-2019 Dragonet Foundation
+ * Copyright (C) 2016-2020 Dragonet Foundation
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,42 +20,24 @@ package org.dragonet.proxy.network.translator.java.entity.movement;
 
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerEntityRotationPacket;
 import com.nukkitx.math.vector.Vector3f;
-import com.nukkitx.protocol.bedrock.packet.MoveEntityAbsolutePacket;
 import lombok.extern.log4j.Log4j2;
 import org.dragonet.proxy.network.session.ProxySession;
 import org.dragonet.proxy.network.session.cache.object.CachedEntity;
-import org.dragonet.proxy.network.translator.PacketTranslator;
-import org.dragonet.proxy.network.translator.annotations.PCPacketTranslator;
+import org.dragonet.proxy.network.translator.misc.PacketTranslator;
+import org.dragonet.proxy.util.registry.PacketRegisterInfo;
 
 @Log4j2
-@PCPacketTranslator(packetClass = ServerEntityRotationPacket.class)
+@PacketRegisterInfo(packet = ServerEntityRotationPacket.class)
 public class PCEntityRotationTranslator extends PacketTranslator<ServerEntityRotationPacket> {
-    public static final PCEntityRotationTranslator INSTANCE = new PCEntityRotationTranslator();
 
     @Override
     public void translate(ProxySession session, ServerEntityRotationPacket packet) {
         CachedEntity cachedEntity = session.getEntityCache().getByRemoteId(packet.getEntityId());
         if(cachedEntity == null) {
-            //log.info("(debug) EntityRotation: Cached entity is null");
+            //log.info(TextFormat.GRAY + "(debug) EntityRotation: Cached entity is null");
             return;
         }
 
-        cachedEntity.moveRelative(Vector3f.ZERO, packet.getPitch(), packet.getYaw());
-
-        Vector3f rotation = Vector3f.from(cachedEntity.getRotation().getX() / (360d / 256d),
-            cachedEntity.getRotation().getY() / (360d / 256d), cachedEntity.getRotation().getZ() / (360d / 256d));
-
-        if(cachedEntity.isShouldMove()) {
-            MoveEntityAbsolutePacket moveEntityPacket = new MoveEntityAbsolutePacket();
-            moveEntityPacket.setRuntimeEntityId(cachedEntity.getProxyEid());
-            moveEntityPacket.setPosition(cachedEntity.getOffsetPosition());
-            moveEntityPacket.setRotation(rotation);
-            moveEntityPacket.setOnGround(packet.isOnGround());
-            moveEntityPacket.setTeleported(false);
-
-            session.sendPacket(moveEntityPacket);
-
-            cachedEntity.setShouldMove(false);
-        }
+        cachedEntity.rotate(session, Vector3f.from(packet.getPitch(), packet.getYaw(), packet.getYaw()));
     }
 }

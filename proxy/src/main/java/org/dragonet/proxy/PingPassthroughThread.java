@@ -1,6 +1,6 @@
 /*
  * DragonProxy
- * Copyright (C) 2016-2019 Dragonet Foundation
+ * Copyright (C) 2016-2020 Dragonet Foundation
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,29 +26,30 @@ import com.github.steveice10.mc.protocol.data.status.handler.ServerInfoHandler;
 import com.github.steveice10.packetlib.Client;
 import com.github.steveice10.packetlib.tcp.TcpSessionFactory;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 
+@RequiredArgsConstructor
+@Log4j2
 public class PingPassthroughThread implements Runnable {
 
-    private DragonProxy proxy;
-
-    public PingPassthroughThread(DragonProxy proxy) {
-        this.proxy = proxy;
-    }
+    private final DragonProxy proxy;
 
     @Getter
-    private ServerStatusInfo info;
+    private ServerStatusInfo statusInfo;
 
     private Client client;
 
     @Override
     public void run() {
         try {
-            this.client = new Client(proxy.getConfiguration().getRemoteAddress(), proxy.getConfiguration().getRemotePort(), new MinecraftProtocol(SubProtocol.STATUS), new TcpSessionFactory());
-            this.client.getSession().setFlag(MinecraftConstants.SERVER_INFO_HANDLER_KEY, (ServerInfoHandler) (session, info) -> {
-                this.info = info;
-                this.client.getSession().disconnect(null);
-            });
+            client = new Client(proxy.getConfiguration().getRemoteServer().getAddress(), proxy.getConfiguration().getRemoteServer().getPort(),
+                new MinecraftProtocol(SubProtocol.STATUS), new TcpSessionFactory());
 
+            client.getSession().setFlag(MinecraftConstants.SERVER_INFO_HANDLER_KEY, (ServerInfoHandler) (session, info) -> {
+                statusInfo = info;
+                client.getSession().disconnect(null);
+            });
             client.getSession().connect();
         } catch (Exception ex) {
             ex.printStackTrace();

@@ -1,6 +1,6 @@
 /*
  * DragonProxy
- * Copyright (C) 2016-2019 Dragonet Foundation
+ * Copyright (C) 2016-2020 Dragonet Foundation
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,8 @@ package org.dragonet.proxy.network.session.cache;
 public interface Cache {
 
     /**
-     * Purges the entire cache.
+     * Purges all data that has been cached in a certain
+     * cache class.
      */
     void purge();
 }

@@ -1,6 +1,6 @@
 /*
  * DragonProxy
- * Copyright (C) 2016-2019 Dragonet Foundation
+ * Copyright (C) 2016-2020 Dragonet Foundation
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,12 +19,14 @@
 package org.dragonet.proxy.remote;
 
 import com.google.common.base.Preconditions;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class RemoteServerManager {
-    private Map<String, RemoteServer> remoteServers = new HashMap<>();
+    private Object2ObjectMap<String, RemoteServer> remoteServers = new Object2ObjectOpenHashMap<>();
 
     public void addServer(RemoteServer server) {
         Preconditions.checkNotNull(server, "Remote server cannot be null");

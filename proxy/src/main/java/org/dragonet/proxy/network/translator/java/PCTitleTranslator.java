@@ -1,6 +1,6 @@
 /*
  * DragonProxy
- * Copyright (C) 2016-2019 Dragonet Foundation
+ * Copyright (C) 2016-2020 Dragonet Foundation
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,19 +18,18 @@
  */
 package org.dragonet.proxy.network.translator.java;
 
+import com.github.steveice10.mc.protocol.data.message.ChatColor;
 import com.github.steveice10.mc.protocol.packet.ingame.server.ServerTitlePacket;
 import com.nukkitx.protocol.bedrock.packet.SetTitlePacket;
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.dragonet.proxy.network.session.ProxySession;
-import org.dragonet.proxy.network.translator.PacketTranslator;
-import org.dragonet.proxy.network.translator.annotations.PCPacketTranslator;
-import org.dragonet.proxy.network.translator.types.MessageTranslator;
+import org.dragonet.proxy.network.translator.misc.PacketTranslator;
+import org.dragonet.proxy.util.registry.PacketRegisterInfo;
+import org.dragonet.proxy.network.translator.misc.MessageTranslator;
 
 
 @Log4j2
-@PCPacketTranslator(packetClass = ServerTitlePacket.class)
+@PacketRegisterInfo(packet = ServerTitlePacket.class)
 public class PCTitleTranslator extends PacketTranslator<ServerTitlePacket> {
     public static PCTitleTranslator INSTANCE = new PCTitleTranslator();
 
@@ -44,15 +43,25 @@ public class PCTitleTranslator extends PacketTranslator<ServerTitlePacket> {
         switch(packet.getAction()) {
             case ACTION_BAR:
                 bedrockPacket.setType(SetTitlePacket.Type.SET_ACTIONBAR_MESSAGE);
-                bedrockPacket.setText(MessageTranslator.translate(packet.getTitle().getText()));
+                bedrockPacket.setText(MessageTranslator.translate(packet.getTitle()));
                 break;
             case TITLE:
+                //Otherwise title is black when no colour specified
+                if(packet.getTitle().getStyle().getColor() == ChatColor.NONE) {
+                    packet.getTitle().getStyle().setColor(ChatColor.WHITE);
+                }
+
+                //Change black to none other wise title background is also black
+                if(packet.getTitle().getStyle().getColor() == ChatColor.BLACK) {
+                    packet.getTitle().getStyle().setColor(ChatColor.NONE);
+                }
+
                 bedrockPacket.setType(SetTitlePacket.Type.SET_TITLE);
-                bedrockPacket.setText(MessageTranslator.translate(packet.getTitle().getText()));
+                bedrockPacket.setText(MessageTranslator.translate(packet.getTitle()));
                 break;
             case SUBTITLE:
                 bedrockPacket.setType(SetTitlePacket.Type.SET_SUBTITLE);
-                bedrockPacket.setText(MessageTranslator.translate(packet.getTitle().getText()));
+                bedrockPacket.setText(MessageTranslator.translate(packet.getTitle()));
                 break;
             case RESET:
                 bedrockPacket.setType(SetTitlePacket.Type.RESET_TITLE);
@@ -62,6 +71,6 @@ public class PCTitleTranslator extends PacketTranslator<ServerTitlePacket> {
                 break;
         }
 
-        session.sendPacketImmediately(bedrockPacket);
+        session.sendPacket(bedrockPacket);
     }
 }

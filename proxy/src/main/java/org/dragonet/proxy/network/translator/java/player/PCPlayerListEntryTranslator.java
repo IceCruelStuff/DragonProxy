@@ -1,6 +1,6 @@
 /*
  * DragonProxy
- * Copyright (C) 2016-2019 Dragonet Foundation
+ * Copyright (C) 2016-2020 Dragonet Foundation
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,59 +18,62 @@
  */
 package org.dragonet.proxy.network.translator.java.player;
 
+import com.github.steveice10.mc.auth.data.GameProfile;
 import com.github.steveice10.mc.protocol.data.game.PlayerListEntry;
 import com.github.steveice10.mc.protocol.packet.ingame.server.ServerPlayerListEntryPacket;
+import com.nukkitx.protocol.bedrock.data.ImageData;
 import com.nukkitx.protocol.bedrock.packet.PlayerListPacket;
 import lombok.extern.log4j.Log4j2;
+import org.dragonet.proxy.data.PlayerListInfo;
 import org.dragonet.proxy.network.session.ProxySession;
-import org.dragonet.proxy.network.translator.PacketTranslator;
-import org.dragonet.proxy.network.translator.annotations.PCPacketTranslator;
+import org.dragonet.proxy.network.session.cache.PlayerListCache;
+import org.dragonet.proxy.network.translator.misc.PacketTranslator;
 import org.dragonet.proxy.util.SkinUtils;
+import org.dragonet.proxy.util.registry.PacketRegisterInfo;
 
 @Log4j2
-@PCPacketTranslator(packetClass = ServerPlayerListEntryPacket.class)
+@PacketRegisterInfo(packet = ServerPlayerListEntryPacket.class)
 public class PCPlayerListEntryTranslator extends PacketTranslator<ServerPlayerListEntryPacket> {
-    public static final PCPlayerListEntryTranslator INSTANCE = new PCPlayerListEntryTranslator();
 
     @Override
     public void translate(ProxySession session, ServerPlayerListEntryPacket packet) {
+        PlayerListCache playerListCache = session.getPlayerListCache();
         PlayerListPacket playerListPacket = new PlayerListPacket();
 
         for(PlayerListEntry entry : packet.getEntries()) {
+
+            //Profile will sometime be empty, if it is lets not update/add the player
+            if(entry.getProfile().getName() == null) { return; }
+
             PlayerListPacket.Entry bedrockEntry = new PlayerListPacket.Entry(entry.getProfile().getId());
-            session.getPlayerListCache().getPlayerInfo().put(entry.getProfile().getId(), entry);
+            String displayName = entry.getProfile().getName();
+            //Check player name is a valid minecraft name
+            if(!displayName.matches("^[a-zA-Z0-9_]{0,17}+$") || displayName.equalsIgnoreCase(session.getUsername())) {
+                displayName = null;
+            }
+
+            playerListCache.getPlayerInfo().put(entry.getProfile().getId(), new PlayerListInfo(entry, displayName));
 
             switch(packet.getAction()) {
                 case ADD_PLAYER:
-                    // Fetch our own skin
-                    if(entry.getProfile().getName().equals(session.getUsername()) && session.getProxy().getConfiguration().isFetchPlayerSkins()) {
-                        session.getProxy().getGeneralThreadPool().execute(() -> {
-                            byte[] skinData = SkinUtils.fetchSkin(entry.getProfile());
-                            if (skinData == null) {
-                                return;
-                            }
-                            session.setPlayerSkin2(session.getAuthData().getIdentity(), skinData);
-                        });
-                        return;
-                    }
-
                     long proxyEid = session.getEntityCache().getNextClientEntityId().getAndIncrement();
+                    playerListCache.getPlayerEntityIds().put(entry.getProfile().getId(), proxyEid);
 
-                    playerListPacket.setType(PlayerListPacket.Type.ADD);
+                    playerListPacket.setAction(PlayerListPacket.Action.ADD);
 
                     bedrockEntry.setEntityId(proxyEid);
-                    bedrockEntry.setName(entry.getProfile().getName());
-                    bedrockEntry.setSkinId(entry.getProfile().getIdAsString());
-                    bedrockEntry.setSkinData(SkinUtils.STEVE_SKIN);
-                    bedrockEntry.setCapeData(new byte[0]);
-                    bedrockEntry.setGeometryName("geometry.humanoid");
-                    bedrockEntry.setGeometryData("");
+                    bedrockEntry.setName(displayName);
+                    bedrockEntry.setSkin(SkinUtils.createSkinEntry(SkinUtils.STEVE_SKIN, GameProfile.TextureModel.NORMAL, SkinUtils.DEFAULT_CAPE));
                     bedrockEntry.setXuid("");
                     bedrockEntry.setPlatformChatId("");
 
                     playerListPacket.getEntries().add(bedrockEntry);
-
                     session.sendPacket(playerListPacket);
+                    break;
+
+                case UPDATE_DISPLAY_NAME:
+                    // TODO: sync the player list
+                    playerListCache.updateDisplayName(entry.getProfile(), displayName);
                     break;
 
                 case UPDATE_LATENCY:
@@ -78,12 +81,13 @@ public class PCPlayerListEntryTranslator extends PacketTranslator<ServerPlayerLi
                     break;
 
                 case REMOVE_PLAYER:
-                    playerListPacket.setType(PlayerListPacket.Type.REMOVE);
+                    playerListPacket.setAction(PlayerListPacket.Action.REMOVE);
                     playerListPacket.getEntries().add(bedrockEntry);
 
                     session.sendPacket(playerListPacket);
 
-                    session.getPlayerListCache().getPlayerInfo().remove(entry.getProfile().getId());
+                    playerListCache.getPlayerInfo().remove(entry.getProfile().getId());
+                    playerListCache.getPlayerEntityIds().removeLong(entry.getProfile().getId());
                     break;
             }
         }

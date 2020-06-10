@@ -1,6 +1,6 @@
 /*
  * DragonProxy
- * Copyright (C) 2016-2019 Dragonet Foundation
+ * Copyright (C) 2016-2020 Dragonet Foundation
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,36 +19,24 @@
 package org.dragonet.proxy.network.translator.java.player;
 
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.player.ServerPlayerAbilitiesPacket;
-import com.nukkitx.protocol.bedrock.packet.AdventureSettingsPacket;
+import lombok.extern.log4j.Log4j2;
 import org.dragonet.proxy.network.session.ProxySession;
 import org.dragonet.proxy.network.session.cache.object.CachedPlayer;
-import org.dragonet.proxy.network.translator.PacketTranslator;
-import org.dragonet.proxy.network.translator.annotations.PCPacketTranslator;
+import org.dragonet.proxy.network.translator.misc.PacketTranslator;
+import org.dragonet.proxy.util.registry.PacketRegisterInfo;
 
-
-@PCPacketTranslator(packetClass = ServerPlayerAbilitiesPacket.class)
+@Log4j2
+@PacketRegisterInfo(packet = ServerPlayerAbilitiesPacket.class)
 public class PCPlayerAbilitiesTranslator extends PacketTranslator<ServerPlayerAbilitiesPacket> {
-    private int flags = 0;
 
     @Override
     public void translate(ProxySession session, ServerPlayerAbilitiesPacket packet) {
-        AdventureSettingsPacket adventureSettingsPacket = new AdventureSettingsPacket();
+        CachedPlayer player = session.getCachedEntity();
 
-        setFlag(0x40, packet.isCanFly());
-        setFlag(0x200, packet.isFlying());
+        player.setFlySpeed(packet.getFlySpeed());
+        player.setCanFly(packet.isCanFly());
+        player.setFlying(packet.isFlying());
 
-        session.getCachedEntity().setFlySpeed(packet.getFlySpeed());
-
-        adventureSettingsPacket.setPlayerFlags(flags);
-
-        session.sendPacket(adventureSettingsPacket);
-    }
-
-    private void setFlag(int flag, boolean value) {
-        if (value) {
-            this.flags |= flag;
-        } else {
-            this.flags &= ~flag;
-        }
+        player.sendAdventureSettings(session);
     }
 }

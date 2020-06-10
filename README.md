@@ -5,58 +5,45 @@
 [![Build Status](https://ci.codemc.org/buildStatus/icon?job=DragonetMC/DragonProxy)](https://ci.codemc.org/job/DragonetMC/job/DragonProxy/)
 [![HitCount](http://hits.dwyl.io/DragonetMC/DragonProxy.svg)](http://hits.dwyl.io/DragonetMC/DragonProxy)
 
-
-[![Generic badge](https://img.shields.io/badge/Bedrock-1.12-green.svg)](https://minecraft.gamepedia.com/Bedrock_Edition)
-[![Generic badge](https://img.shields.io/badge/Java-1.14.4-green.svg)](https://minecraft.gamepedia.com/Java_Edition_1.14.4)
-
 A proxy made to allow **Minecraft: Bedrock Edition** clients to connect to **Minecraft: Java Edition** servers.
 
-### What is DragonProxy
-DragonProxy is a proxy between a Minecraft: Bedrock Edition client and a Minecraft: Java Edition server.
+```
+Bedrock 1.14.x // Java 1.15.2
+```
 
-### What's been done so far
-The project has been undergoing a rewrite for some time, and development has recently picked up again.
+## Stats
+See live stats on BStats
+[![Bstats](https://bstats.org/signatures/server-implementation/DragonProxy.svg)](https://bstats.org/plugin/server-implementation/DragonProxy/)
 
-- [x] RakNet broadcasting
-- [x] Joining the remote server
-- [x] Chat and commands support
-  - [ ] Proper translation support
-- [x] Chunk loading
-- [ ] Player movement
-- [ ] Inventory support
-  - [x] Item NBT translation (name and lore, more to come soon)
-- [ ] Viewing entities
-- [x] Effects
-- [ ] Block breaking / placing
-- [x] Authentication (online mode)
-- [x] Fetching skins
-- [x] Titles
-- [x] Bossbar
-- [ ] Scoreboard
-- [ ] Statistics viewing (./stats)
-  - [x] General
-  - [ ] Items
-  - [ ] Mobs
+## What's been done so far
+See the (almost) full list in [#464](https://github.com/DragonetMC/DragonProxy/issues/464).
 
-A more comprehensive TODO list will be created in an issue in the future.
-
-### Download
-No updated releases are currently available.
- - [snapshots](https://ci.codemc.org/job/DragonetMC/job/DragonProxy/lastSuccessfulBuild/): developments builds, unstable, latest features (recommended)
-
-### Compiling
-Clone the repo recursively and then run `mvn clean install`. The output jar will can be found at `bootstrap/target/DragonProxy.jar`.
-
-
-### Donating
-Donating helps support the project and its developers.  
   
-You can donate at [OpenCollective](https://opencollective.com/DragonetMC) or [Patreon](https://patreon.com/DragonetMC). The latter is easier for us, however, and will give you automatic Discord perks.
+## Setup
+1. Download the latest build [on jenkins](https://ci.codemc.io/job/DragonetMC/job/DragonProxy/lastSuccessfulBuild/).  
+2. Run DragonProxy with `java -jar DragonProxy.jar`  
+3. Type 'stop' in console and edit the `config.yml` to your liking  
 
-### Libraries used
-* [NukkitX Protocol Library](https://github.com/NukkitX/Protocol)
-* [MCProtocolLib by Steveice10](https://github.com/Steveice10/MCProtocolLib)
+If you are having trouble please refer to our [Discord](https://invite.gg/DragonetMC).
 
+  
+## Compiling
+### Prerequisites
+* [Apache Maven](https://maven.apache.org/download.cgi)  
+* Java 8+  
+* Git bash  
+
+### Instructions 
+1. Clone the repo: `git clone --recursive https://github.com/DragonetMC/DragonProxy`  
+2. Go to the repo folder `cd DragonProxy` (or whatever you called it) 
+3. Execute `mvn clean package`  
+  
+> The output jar can be found at `bootstrap/standalone/target/DragonProxy.jar`.  
+
+  
+## Donating
+Donating helps support the project. Read more on the [wiki](https://github.com/DragonetMC/DragonProxy/wiki/Donating).  
+* [OpenCollective](https://opencollective.com/DragonetMC)  
+* [Patreon](https://patreon.com/DragonetMC)  
+.  
 CircleCI: [![CircleCI](https://circleci.com/gh/DragonetMC/DragonProxy.svg?style=svg)](https://circleci.com/gh/DragonetMC/DragonProxy)
-
-###### *The REAL Better Together*

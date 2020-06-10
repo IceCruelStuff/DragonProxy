@@ -1,6 +1,6 @@
 /*
  * DragonProxy
- * Copyright (C) 2016-2019 Dragonet Foundation
+ * Copyright (C) 2016-2020 Dragonet Foundation
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,41 +18,42 @@
  */
 package org.dragonet.proxy.network.translator.java;
 
-import com.github.steveice10.mc.auth.data.GameProfile;
+import com.github.steveice10.mc.protocol.data.game.entity.player.GameMode;
+import com.github.steveice10.mc.protocol.data.game.entity.player.Hand;
+import com.github.steveice10.mc.protocol.data.game.setting.ChatVisibility;
+import com.github.steveice10.mc.protocol.data.game.setting.SkinPart;
+import com.github.steveice10.mc.protocol.packet.ingame.client.ClientPluginMessagePacket;
+import com.github.steveice10.mc.protocol.packet.ingame.client.ClientSettingsPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.ServerJoinGamePacket;
-import com.nukkitx.math.vector.Vector2f;
+import com.github.steveice10.packetlib.io.buffer.ByteBufferNetOutput;
+import com.google.common.io.ByteArrayDataOutput;
+import com.google.common.io.ByteStreams;
 import com.nukkitx.math.vector.Vector3f;
-import com.nukkitx.math.vector.Vector3i;
 import com.nukkitx.nbt.CompoundTagBuilder;
 import com.nukkitx.nbt.NbtUtils;
 import com.nukkitx.nbt.stream.NBTOutputStream;
 import com.nukkitx.nbt.tag.CompoundTag;
-import com.nukkitx.protocol.bedrock.data.GamePublishSetting;
-import com.nukkitx.protocol.bedrock.data.GameRule;
 import com.nukkitx.protocol.bedrock.packet.LevelChunkPacket;
 import com.nukkitx.protocol.bedrock.packet.PlayStatusPacket;
-import com.nukkitx.protocol.bedrock.packet.StartGamePacket;
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.dragonet.proxy.DragonProxy;
 import org.dragonet.proxy.network.session.ProxySession;
-import org.dragonet.proxy.network.session.cache.object.CachedPlayer;
-import org.dragonet.proxy.network.session.data.AuthState;
-import org.dragonet.proxy.network.translator.PacketTranslator;
-import org.dragonet.proxy.network.translator.annotations.PCPacketTranslator;
+import org.dragonet.proxy.network.translator.misc.PacketTranslator;
+import org.dragonet.proxy.util.registry.PacketRegisterInfo;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.List;
 
 
 @Log4j2
-@PCPacketTranslator(packetClass = ServerJoinGamePacket.class)
+@PacketRegisterInfo(packet = ServerJoinGamePacket.class)
 public class PCJoinGameTranslator extends PacketTranslator<ServerJoinGamePacket> {
     public static final PCJoinGameTranslator INSTANCE = new PCJoinGameTranslator();
 
     private static final CompoundTag EMPTY_TAG = CompoundTagBuilder.builder().buildRootTag();
-    private static final byte[] EMPTY_LEVEL_CHUNK_DATA;
+    public static final byte[] EMPTY_LEVEL_CHUNK_DATA;
 
     static {
         try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
@@ -73,58 +74,15 @@ public class PCJoinGameTranslator extends PacketTranslator<ServerJoinGamePacket>
         // Cache the player's entity id
         session.getDataCache().put("player_eid", packet.getEntityId());
 
-        //if(session.getDataCache().get("auth_state") != AuthState.AUTHENTICATED) {
-            StartGamePacket startGamePacket = new StartGamePacket();
-            startGamePacket.setUniqueEntityId(packet.getEntityId());
-            startGamePacket.setRuntimeEntityId(packet.getEntityId());
-            startGamePacket.setPlayerGamemode(packet.getGameMode().ordinal());
-            startGamePacket.setPlayerPosition(Vector3f.from(-23, 70, 0)); // Hypixel bedwars lobby spawn
-            startGamePacket.setRotation(Vector2f.from(1, 1));
+        session.getEntityCache().clonePlayer(packet.getEntityId(), session.getCachedEntity());
 
-            startGamePacket.setSeed(1111);
-            startGamePacket.setDimensionId(0);
-            startGamePacket.setGeneratorId(0);
-            startGamePacket.setLevelGamemode(packet.getGameMode().ordinal());
-            startGamePacket.setDifficulty(0);
-            startGamePacket.setDefaultSpawn(Vector3i.from(-23, 70, 0));
-            startGamePacket.setAcheivementsDisabled(true);
-            startGamePacket.setTime(0);
-            startGamePacket.setEduLevel(false);
-            startGamePacket.setEduFeaturesEnabled(false);
-            startGamePacket.setRainLevel(0);
-            startGamePacket.setLightningLevel(0);
-            startGamePacket.setMultiplayerGame(true);
-            startGamePacket.setBroadcastingToLan(true);
-            startGamePacket.getGamerules().add((new GameRule<>("showcoordinates", true)));
-            startGamePacket.setPlatformBroadcastMode(GamePublishSetting.PUBLIC);
-            startGamePacket.setXblBroadcastMode(GamePublishSetting.PUBLIC);
-            startGamePacket.setCommandsEnabled(true);
-            startGamePacket.setTexturePacksRequired(false);
-            startGamePacket.setBonusChestEnabled(false);
-            startGamePacket.setStartingWithMap(false);
-            startGamePacket.setTrustingPlayers(true);
-            startGamePacket.setDefaultPlayerPermission(1);
-            startGamePacket.setServerChunkTickRange(4);
-            startGamePacket.setBehaviorPackLocked(false);
-            startGamePacket.setResourcePackLocked(false);
-            startGamePacket.setFromLockedWorldTemplate(false);
-            startGamePacket.setUsingMsaGamertagsOnly(false);
-            startGamePacket.setFromWorldTemplate(false);
-            startGamePacket.setWorldTemplateOptionLocked(false);
+        // Update the players game mode
+        session.getCachedEntity().setGameMode(packet.getGameMode());
+        session.sendGamemode();
 
-            startGamePacket.setLevelId("world test");
-            startGamePacket.setWorldName("world");
-            startGamePacket.setPremiumWorldTemplateId("00000000-0000-0000-0000-000000000000");
-            startGamePacket.setCurrentTick(0);
-            startGamePacket.setEnchantmentSeed(0);
-            startGamePacket.setMultiplayerCorrelationId("");
-
-            startGamePacket.setCachedPalette(DragonProxy.INSTANCE.getPaletteManager().getCachedPalette());
-            startGamePacket.setItemEntries(DragonProxy.INSTANCE.getPaletteManager().getItemEntries());
-
-            // TODO: 01/04/2019 Add support for deserializing the chunk in the protocol library
-
-            session.sendPacketImmediately(startGamePacket);
+        if(packet.getGameMode() == GameMode.CREATIVE) {
+            session.sendCreativeInventory();
+        }
 
             Vector3f pos = Vector3f.from(-23, 70, 0);
             int chunkX = pos.getFloorX() >> 4;
@@ -138,22 +96,50 @@ public class PCJoinGameTranslator extends PacketTranslator<ServerJoinGamePacket>
                     data.setSubChunksLength(0);
                     data.setData(EMPTY_LEVEL_CHUNK_DATA);
                     data.setCachingEnabled(false);
-                    session.sendPacketImmediately(data);
+                    session.sendPacket(data);
                 }
             }
         //}
 
         PlayStatusPacket playStatus = new PlayStatusPacket();
         playStatus.setStatus(PlayStatusPacket.Status.PLAYER_SPAWN);
-        session.sendPacketImmediately(playStatus);
+        session.sendPacket(playStatus);
 
-        // Add the player to the cache (still need to remove them, but thats a TODO)
-        if(session.getDataCache().get("auth_state") != AuthState.AUTHENTICATED) {
-            GameProfile profile = new GameProfile(session.getAuthData().getIdentity(), session.getAuthData().getDisplayName());
-            CachedPlayer player = session.getEntityCache().newPlayer(1, profile);
+        // Send client settings to the server
+        List<SkinPart> skinParts = Arrays.asList(SkinPart.values());
+        ClientSettingsPacket clientSettingsPacket = new ClientSettingsPacket("en_GB", (byte) session.getRenderDistance(), ChatVisibility.FULL, true, skinParts, Hand.MAIN_HAND);
+        session.sendRemotePacket(clientSettingsPacket);
 
-            session.setCachedEntity(player);
-        }
+        // Send brand
+        sendClientBrand(session);
+
+        // Send player data
+        ByteArrayDataOutput output = ByteStreams.newDataOutput();
+        output.writeUTF("PlayerLogin");
+        output.writeUTF(session.getAuthData().getDisplayName()); // Display name
+        output.writeUTF(session.getAuthData().getXuid()); // XUID
+        output.writeUTF(session.getAuthData().getIdentity().toString()); // UUID
+        output.writeInt(session.getClientData().getDeviceOs().ordinal());
+        output.writeInt(session.getClientData().getUiProfile().ordinal());
+        output.writeUTF(session.getClientData().getDeviceModel());
+        output.writeUTF(session.getClientData().getGameVersion());
+        output.writeUTF(session.getClientData().getLanguageCode());
+
+        session.sendRemotePacket(new ClientPluginMessagePacket("dragonproxy:main", output.toByteArray()));
     }
 
+    /**
+     * Send the brand name to the server.
+     * This is a way to identify a DragonProxy client vs a vanilla client.
+     */
+    private void sendClientBrand(ProxySession session) {
+        ByteBufferNetOutput brandOutput = new ByteBufferNetOutput(ByteBuffer.allocate(20));
+        try {
+            brandOutput.writeString("DragonProxy");
+        } catch (IOException e) {
+            log.warn("Failed to send client brand: " + e.getMessage());
+            return;
+        }
+        session.sendRemotePacket(new ClientPluginMessagePacket("minecraft:brand", brandOutput.getByteBuffer().array()));
+    }
 }

@@ -1,6 +1,6 @@
 /*
  * DragonProxy
- * Copyright (C) 2016-2019 Dragonet Foundation
+ * Copyright (C) 2016-2020 Dragonet Foundation
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,21 +18,22 @@
  */
 package org.dragonet.proxy.network.translator.bedrock;
 
+import com.github.steveice10.mc.protocol.data.game.entity.player.Hand;
+import com.github.steveice10.mc.protocol.packet.ingame.client.player.ClientPlayerSwingArmPacket;
 import com.nukkitx.protocol.bedrock.packet.AnimatePacket;
 import org.dragonet.proxy.network.session.ProxySession;
-import org.dragonet.proxy.network.translator.PacketTranslator;
-import org.dragonet.proxy.network.translator.annotations.PEPacketTranslator;
+import org.dragonet.proxy.network.translator.misc.PacketTranslator;
+import org.dragonet.proxy.util.registry.PacketRegisterInfo;
 
-@PEPacketTranslator(packetClass = AnimatePacket.class)
+@PacketRegisterInfo(packet = AnimatePacket.class)
 public class PEAnimateTranslator extends PacketTranslator<AnimatePacket> {
-    public static final PEAnimateTranslator INSTANCE = new PEAnimateTranslator();
 
     @Override
     public void translate(ProxySession session, AnimatePacket packet) {
         switch(packet.getAction()) {
             case SWING_ARM:
-                //ClientPlayerSwingArmPacket swingArmPacket = new ClientPlayerSwingArmPacket(Hand.MAIN_HAND);
-                //session.sendRemotePacket(swingArmPacket);
+                session.sendRemotePacket(new ClientPlayerSwingArmPacket(Hand.MAIN_HAND));
+                break;
         }
     }
 }

@@ -1,6 +1,6 @@
 /*
  * DragonProxy
- * Copyright (C) 2016-2019 Dragonet Foundation
+ * Copyright (C) 2016-2020 Dragonet Foundation
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,13 +22,12 @@ import com.nukkitx.protocol.bedrock.packet.InteractPacket;
 import lombok.extern.log4j.Log4j2;
 import org.dragonet.proxy.network.session.ProxySession;
 import org.dragonet.proxy.network.session.cache.object.CachedEntity;
-import org.dragonet.proxy.network.translator.PacketTranslator;
-import org.dragonet.proxy.network.translator.annotations.PEPacketTranslator;
+import org.dragonet.proxy.network.translator.misc.PacketTranslator;
+import org.dragonet.proxy.util.registry.PacketRegisterInfo;
 
 @Log4j2
-@PEPacketTranslator(packetClass = InteractPacket.class)
+@PacketRegisterInfo(packet = InteractPacket.class)
 public class PEInteractTranslator extends PacketTranslator<InteractPacket> {
-    public static final PEInteractTranslator INSTANCE = new PEInteractTranslator();
 
     @Override
     public void translate(ProxySession session, InteractPacket packet) {
@@ -38,19 +37,6 @@ public class PEInteractTranslator extends PacketTranslator<InteractPacket> {
             return;
         }
 
-        switch(packet.getAction()) {
-            case 3: // Leave vehicle
-
-                break;
-            case 4: // Mouseover
-
-                break;
-            case 6: // Open inventory
-
-                break;
-            default:
-                log.warn("Unknown interact action: " + packet.getAction());
-                break;
-        }
+        log.info("interact: " + packet.getAction().name());
     }
 }

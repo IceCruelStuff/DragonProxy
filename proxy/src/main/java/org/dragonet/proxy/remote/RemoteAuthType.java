@@ -1,6 +1,6 @@
 /*
  * DragonProxy
- * Copyright (C) 2016-2019 Dragonet Foundation
+ * Copyright (C) 2016-2020 Dragonet Foundation
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,6 +17,8 @@
  * https://github.com/DragonetMC/DragonProxy
  */
 package org.dragonet.proxy.remote;
+
+import com.fasterxml.jackson.annotation.JsonAlias;
 
 public enum RemoteAuthType {
     CREDENTIALS,

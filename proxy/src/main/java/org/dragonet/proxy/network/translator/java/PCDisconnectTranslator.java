@@ -1,6 +1,6 @@
 /*
  * DragonProxy
- * Copyright (C) 2016-2019 Dragonet Foundation
+ * Copyright (C) 2016-2020 Dragonet Foundation
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,17 +19,14 @@
 package org.dragonet.proxy.network.translator.java;
 
 import com.github.steveice10.mc.protocol.packet.ingame.server.ServerDisconnectPacket;
-import com.github.steveice10.mc.protocol.packet.ingame.server.scoreboard.ServerDisplayScoreboardPacket;
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
 import org.dragonet.proxy.network.session.ProxySession;
 import org.dragonet.proxy.network.session.cache.object.CachedPlayer;
-import org.dragonet.proxy.network.translator.PacketTranslator;
-import org.dragonet.proxy.network.translator.annotations.PCPacketTranslator;
-import org.dragonet.proxy.network.translator.types.MessageTranslator;
+import org.dragonet.proxy.network.translator.misc.PacketTranslator;
+import org.dragonet.proxy.util.registry.PacketRegisterInfo;
+import org.dragonet.proxy.network.translator.misc.MessageTranslator;
 
 
-@PCPacketTranslator(packetClass = ServerDisconnectPacket.class)
+@PacketRegisterInfo(packet = ServerDisconnectPacket.class)
 public class PCDisconnectTranslator extends PacketTranslator<ServerDisconnectPacket> {
     public static final PCDisconnectTranslator INSTANCE = new PCDisconnectTranslator();
 

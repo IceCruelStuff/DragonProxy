@@ -1,6 +1,6 @@
 /*
  * DragonProxy
- * Copyright (C) 2016-2019 Dragonet Foundation
+ * Copyright (C) 2016-2020 Dragonet Foundation
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,53 +24,49 @@ import com.nukkitx.protocol.bedrock.data.EntityData;
 import com.nukkitx.protocol.bedrock.packet.AddEntityPacket;
 import com.nukkitx.protocol.bedrock.packet.BossEventPacket;
 import com.nukkitx.protocol.bedrock.packet.RemoveEntityPacket;
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.dragonet.proxy.network.session.ProxySession;
-import org.dragonet.proxy.network.translator.PacketTranslator;
-import org.dragonet.proxy.network.translator.annotations.PCPacketTranslator;
-import org.dragonet.proxy.network.translator.types.MessageTranslator;
+import org.dragonet.proxy.network.translator.misc.PacketTranslator;
+import org.dragonet.proxy.util.registry.PacketRegisterInfo;
+import org.dragonet.proxy.network.translator.misc.MessageTranslator;
 import org.dragonet.proxy.util.TextFormat;
 
 import java.util.UUID;
 
 @Log4j2
 
-@PCPacketTranslator(packetClass = ServerBossBarPacket.class)
+@PacketRegisterInfo(packet = ServerBossBarPacket.class)
 public class PCBossBarTranslator extends PacketTranslator<ServerBossBarPacket> {
-    public static final PCBossBarTranslator INSTANCE = new PCBossBarTranslator();
 
     @Override
     public void translate(ProxySession session, ServerBossBarPacket packet) {
-        // NOTE: see https://github.com/DragonetMC/DragonProxy/issues/424
         BossEventPacket bossEventPacket = new BossEventPacket();
         bossEventPacket.setColor(1);
         bossEventPacket.setOverlay(1);
         bossEventPacket.setDarkenSky(1);
-        bossEventPacket.setPlayerUniqueEntityId(1); // player eid
+        bossEventPacket.setPlayerUniqueEntityId(session.getCachedEntity().getProxyEid());
 
         switch(packet.getAction()) {
             case ADD:
                 // See the documentation for addFakeEntity() below
                 addFakeEntity(session, packet.getUuid());
 
-                bossEventPacket.setTitle(MessageTranslator.translate(packet.getTitle().getFullText()));
-                bossEventPacket.setType(BossEventPacket.Type.SHOW);
+                bossEventPacket.setTitle(MessageTranslator.translate(packet.getTitle()));
+                bossEventPacket.setAction(BossEventPacket.Action.SHOW);
                 bossEventPacket.setHealthPercentage(packet.getHealth());
                 break;
             case REMOVE:
                 removeFakeEntity(session, packet.getUuid());
 
-                bossEventPacket.setType(BossEventPacket.Type.HIDE);
+                bossEventPacket.setAction(BossEventPacket.Action.HIDE);
                 break;
             case UPDATE_HEALTH:
-                bossEventPacket.setType(BossEventPacket.Type.HEALTH_PERCENTAGE);
+                bossEventPacket.setAction(BossEventPacket.Action.HEALTH_PERCENTAGE);
                 bossEventPacket.setHealthPercentage(packet.getHealth());
                 break;
             case UPDATE_TITLE:
-                bossEventPacket.setType(BossEventPacket.Type.TITLE);
-                bossEventPacket.setTitle(MessageTranslator.translate(packet.getTitle().getFullText()));
+                bossEventPacket.setAction(BossEventPacket.Action.TITLE);
+                bossEventPacket.setTitle(MessageTranslator.translate(packet.getTitle()));
                 break;
             case UPDATE_STYLE:
                 //bossEventPacket.setType(BossEventPacket.Type.OVERLAY);
@@ -78,6 +74,7 @@ public class PCBossBarTranslator extends PacketTranslator<ServerBossBarPacket> {
                 break;
             default:
                 log.info(TextFormat.GRAY + "(debug) Unhandled boss bar action: " + packet.getAction().name());
+                break;
         }
 
         Long bossEid = session.getEntityCache().getBossbars().get(packet.getUuid());
@@ -107,9 +104,13 @@ public class PCBossBarTranslator extends PacketTranslator<ServerBossBarPacket> {
     }
 
     private void removeFakeEntity(ProxySession session, UUID uuid) {
-        RemoveEntityPacket removeEntityPacket = new RemoveEntityPacket();
-        removeEntityPacket.setUniqueEntityId(session.getEntityCache().removeBossBar(uuid));
+        if(session.getEntityCache().getBossbars().containsKey(uuid)) {
+            RemoveEntityPacket removeEntityPacket = new RemoveEntityPacket();
+            removeEntityPacket.setUniqueEntityId(session.getEntityCache().removeBossBar(uuid));
 
-        session.sendPacket(removeEntityPacket);
+            session.sendPacket(removeEntityPacket);
+        } else {
+            log.info(TextFormat.GRAY + "(debug) tried removing a bossbar that doesnt exist");
+        }
     }
 }

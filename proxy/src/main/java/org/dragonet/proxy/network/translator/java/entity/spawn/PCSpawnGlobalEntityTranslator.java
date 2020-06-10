@@ -1,6 +1,6 @@
 /*
  * DragonProxy
- * Copyright (C) 2016-2019 Dragonet Foundation
+ * Copyright (C) 2016-2020 Dragonet Foundation
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,17 +21,16 @@ package org.dragonet.proxy.network.translator.java.entity.spawn;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.spawn.ServerSpawnGlobalEntityPacket;
 import com.nukkitx.math.vector.Vector3f;
 import lombok.extern.log4j.Log4j2;
-import org.dragonet.proxy.data.entity.EntityType;
+import org.dragonet.proxy.data.entity.BedrockEntityType;
 import org.dragonet.proxy.network.session.ProxySession;
 import org.dragonet.proxy.network.session.cache.object.CachedEntity;
-import org.dragonet.proxy.network.translator.PacketTranslator;
-import org.dragonet.proxy.network.translator.annotations.PCPacketTranslator;
-import org.dragonet.proxy.network.translator.types.EntityTypeTranslator;
+import org.dragonet.proxy.network.translator.misc.PacketTranslator;
+import org.dragonet.proxy.util.registry.PacketRegisterInfo;
+import org.dragonet.proxy.network.translator.misc.EntityTypeTranslator;
 
 @Log4j2
-@PCPacketTranslator(packetClass = ServerSpawnGlobalEntityPacket.class)
+@PacketRegisterInfo(packet = ServerSpawnGlobalEntityPacket.class)
 public class PCSpawnGlobalEntityTranslator extends PacketTranslator<ServerSpawnGlobalEntityPacket> {
-    public static final PCSpawnGlobalEntityTranslator INSTANCE = new PCSpawnGlobalEntityTranslator();
 
     @Override
     public void translate(ProxySession session, ServerSpawnGlobalEntityPacket packet) {
@@ -41,7 +40,7 @@ public class PCSpawnGlobalEntityTranslator extends PacketTranslator<ServerSpawnG
             return;
         }
 
-        EntityType entityType = EntityTypeTranslator.translateToBedrock(packet.getType());
+        BedrockEntityType entityType = EntityTypeTranslator.translateToBedrock(packet.getType());
         if(entityType == null) {
             log.warn("Cannot translate global entity type: " + packet.getType().name());
             return;

@@ -1,6 +1,6 @@
 /*
  * DragonProxy
- * Copyright (C) 2016-2019 Dragonet Foundation
+ * Copyright (C) 2016-2020 Dragonet Foundation
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,12 +23,11 @@ import com.nukkitx.math.vector.Vector3f;
 import com.nukkitx.protocol.bedrock.packet.SetEntityMotionPacket;
 import org.dragonet.proxy.network.session.ProxySession;
 import org.dragonet.proxy.network.session.cache.object.CachedEntity;
-import org.dragonet.proxy.network.translator.PacketTranslator;
-import org.dragonet.proxy.network.translator.annotations.PCPacketTranslator;
+import org.dragonet.proxy.network.translator.misc.PacketTranslator;
+import org.dragonet.proxy.util.registry.PacketRegisterInfo;
 
-@PCPacketTranslator(packetClass = ServerEntityVelocityPacket.class)
+@PacketRegisterInfo(packet = ServerEntityVelocityPacket.class)
 public class PCEntityVelocityTranslator extends PacketTranslator<ServerEntityVelocityPacket> {
-    public static final PCEntityVelocityTranslator INSTANCE = new PCEntityVelocityTranslator();
 
     @Override
     public void translate(ProxySession session, ServerEntityVelocityPacket packet) {

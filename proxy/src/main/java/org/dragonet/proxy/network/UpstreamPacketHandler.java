@@ -1,6 +1,6 @@
 /*
  * DragonProxy
- * Copyright (C) 2016-2019 Dragonet Foundation
+ * Copyright (C) 2016-2020 Dragonet Foundation
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,11 +20,16 @@ package org.dragonet.proxy.network;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
+import com.github.steveice10.mc.protocol.data.game.entity.player.GameMode;
+import com.github.steveice10.mc.protocol.data.game.setting.Difficulty;
+import com.github.steveice10.mc.protocol.packet.ingame.client.ClientChatPacket;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.nimbusds.jose.JWSObject;
+import com.nukkitx.protocol.bedrock.BedrockPacket;
 import com.nukkitx.protocol.bedrock.BedrockServerSession;
+import com.nukkitx.protocol.bedrock.data.PlayerPermission;
 import com.nukkitx.protocol.bedrock.handler.BedrockPacketHandler;
 import com.nukkitx.protocol.bedrock.packet.*;
 import com.nukkitx.protocol.bedrock.util.EncryptionUtils;
@@ -32,6 +37,7 @@ import lombok.extern.log4j.Log4j2;
 import net.minidev.json.JSONObject;
 import org.dragonet.proxy.DragonProxy;
 import org.dragonet.proxy.network.session.ProxySession;
+import org.dragonet.proxy.network.session.cache.object.CachedPlayer;
 import org.dragonet.proxy.network.session.data.AuthData;
 import org.dragonet.proxy.network.session.data.AuthState;
 import org.dragonet.proxy.network.session.data.ClientData;
@@ -39,25 +45,26 @@ import org.dragonet.proxy.network.translator.PacketTranslatorRegistry;
 import org.dragonet.proxy.remote.RemoteAuthType;
 import org.dragonet.proxy.remote.RemoteServer;
 import org.dragonet.proxy.util.BedrockLoginUtils;
+import org.dragonet.proxy.util.TextFormat;
 
 import java.io.IOException;
 import java.security.interfaces.ECPublicKey;
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
- * Respresents the connection between the mcpe client and the proxy.
+ * Represents the connection between the bedrock client and the proxy.
  * Most of the LoginPacket code is from the NukkitX project.
  */
 @Log4j2
 public class UpstreamPacketHandler implements BedrockPacketHandler {
-
     private DragonProxy proxy;
     private ProxySession session;
 
-    public UpstreamPacketHandler(DragonProxy proxy, BedrockServerSession bedrockSession) {
+    public UpstreamPacketHandler(DragonProxy proxy, ProxySession session) {
         this.proxy = proxy;
-        this.session = new ProxySession(proxy, bedrockSession);
+        this.session = session;
     }
 
     @Override
@@ -68,8 +75,9 @@ public class UpstreamPacketHandler implements BedrockPacketHandler {
             // Set a codec so we can disconnect them
             session.getBedrockSession().setPacketCodec(DragonProxy.BEDROCK_CODEC);
 
-            // TODO: This message will never actually be displayed because the bedrock client is weird
-            session.getBedrockSession().disconnect("Please use " + DragonProxy.BEDROCK_CODEC.getMinecraftVersion());
+            // We send a start game packet and play status so the client doesn't get stuck on loading resources
+            session.sendFakeStartGame(true);
+            session.getBedrockSession().disconnect(TextFormat.GOLD + "Unsupported game version.\n" + TextFormat.WHITE + "Please use 1.14.0");
             return true;
         }
         session.getBedrockSession().setPacketCodec(DragonProxy.BEDROCK_SUPPORTED_CODECS[index]);
@@ -146,21 +154,15 @@ public class UpstreamPacketHandler implements BedrockPacketHandler {
     public boolean handle(ResourcePackClientResponsePacket packet) {
         switch (packet.getStatus()) {
             case COMPLETED:
-                if(proxy.getConfiguration().getRemoteAuthType() == RemoteAuthType.CREDENTIALS) {
-                    session.getDataCache().put("auth_state", AuthState.AUTHENTICATING);
-                    session.sendFakeStartGame();
-                    session.sendLoginForm();
-                    return true;
-                }
+                session.handleJoin();
 
-                // Start connecting to remote server
-                RemoteServer remoteServer = new RemoteServer("local", proxy.getConfiguration().getRemoteAddress(), proxy.getConfiguration().getRemotePort());
-                session.connect(remoteServer);
+                log.info("{} connected", session.getAuthData().getDisplayName());
                 break;
             case HAVE_ALL_PACKS:
                 ResourcePackStackPacket stack = new ResourcePackStackPacket();
                 stack.setExperimental(false);
                 stack.setForcedToAccept(false);
+                stack.setGameVersion(DragonProxy.BEDROCK_CODEC.getMinecraftVersion());
                 session.sendPacketImmediately(stack);
                 break;
             default:
@@ -169,7 +171,6 @@ public class UpstreamPacketHandler implements BedrockPacketHandler {
                 return false;
         }
 
-        log.info("{} connected", session.getAuthData().getDisplayName());
         return true;
     }
 
@@ -206,6 +207,30 @@ public class UpstreamPacketHandler implements BedrockPacketHandler {
         return true;
     }
 
+    @Override
+    public boolean handle(SetPlayerGameTypePacket packet) {
+        PacketTranslatorRegistry.BEDROCK_TO_JAVA.translate(session, packet);
+        return true;
+    }
+
+    @Override
+    public boolean handle(SetDefaultGameTypePacket packet) {
+        PacketTranslatorRegistry.BEDROCK_TO_JAVA.translate(session, packet);
+        return true;
+    }
+
+    @Override
+    public boolean handle(SetDifficultyPacket packet) {
+        PacketTranslatorRegistry.BEDROCK_TO_JAVA.translate(session, packet);
+        return true;
+    }
+
+    @Override
+    public boolean handle(SettingsCommandPacket packet) {
+        PacketTranslatorRegistry.BEDROCK_TO_JAVA.translate(session, packet);
+        return true;
+    }
+
     // TODO: a better method
     @Override
     public boolean handle(TextPacket packet) {
@@ -237,4 +262,27 @@ public class UpstreamPacketHandler implements BedrockPacketHandler {
         return true;
     }
 
+    @Override
+    public boolean handle(RespawnPacket packet) {
+        PacketTranslatorRegistry.BEDROCK_TO_JAVA.translate(session, packet);
+        return true;
+    }
+
+    @Override
+    public boolean handle(MobEquipmentPacket packet) {
+        PacketTranslatorRegistry.BEDROCK_TO_JAVA.translate(session, packet);
+        return true;
+    }
+
+    @Override
+    public boolean handle(CommandBlockUpdatePacket packet) {
+        PacketTranslatorRegistry.BEDROCK_TO_JAVA.translate(session, packet);
+        return true;
+    }
+
+    @Override
+    public boolean handle(BlockEntityDataPacket packet) {
+        PacketTranslatorRegistry.BEDROCK_TO_JAVA.translate(session, packet);
+        return true;
+    }
 }

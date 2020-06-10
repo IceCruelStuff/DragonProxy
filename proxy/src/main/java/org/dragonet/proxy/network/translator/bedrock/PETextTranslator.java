@@ -1,6 +1,6 @@
 /*
  * DragonProxy
- * Copyright (C) 2016-2019 Dragonet Foundation
+ * Copyright (C) 2016-2020 Dragonet Foundation
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,22 +21,20 @@ package org.dragonet.proxy.network.translator.bedrock;
 import com.github.steveice10.mc.protocol.packet.ingame.client.ClientChatPacket;
 import com.nukkitx.protocol.bedrock.packet.TextPacket;
 import org.dragonet.proxy.network.session.ProxySession;
-import org.dragonet.proxy.network.translator.PacketTranslator;
-import org.dragonet.proxy.network.translator.annotations.PEPacketTranslator;
+import org.dragonet.proxy.network.translator.misc.PacketTranslator;
+import org.dragonet.proxy.util.registry.PacketRegisterInfo;
 
-@PEPacketTranslator(packetClass = TextPacket.class)
+@PacketRegisterInfo(packet = TextPacket.class)
 public class PETextTranslator extends PacketTranslator<TextPacket> {
-    public static final PETextTranslator INSTANCE = new PETextTranslator();
 
     @Override
     public void translate(ProxySession session, TextPacket packet) {
+        // Hack for entering commands without the bedrock client suggestions showing up
         if(packet.getMessage().charAt(0) == '.' && packet.getMessage().charAt(1) == '/') {
-            ClientChatPacket chatPacket = new ClientChatPacket(packet.getMessage().replace("./", "/"));
-            session.sendRemotePacket(chatPacket);
+            session.sendRemotePacket(new ClientChatPacket(packet.getMessage().replace("./", "/")));
             return;
         }
 
-        ClientChatPacket chatPacket = new ClientChatPacket(packet.getMessage());
-        session.sendRemotePacket(chatPacket);
+        session.sendRemotePacket(new ClientChatPacket(packet.getMessage()));
     }
 }

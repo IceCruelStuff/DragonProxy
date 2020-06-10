@@ -1,6 +1,6 @@
 /*
  * DragonProxy
- * Copyright (C) 2016-2019 Dragonet Foundation
+ * Copyright (C) 2016-2020 Dragonet Foundation
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -59,14 +59,28 @@ public final class ClientData {
     private String serverAddress;
     @JsonProperty("SkinData")
     private byte[] skinData; // deserialized
-    @JsonProperty("SkinGeometry")
+    @JsonProperty("SkinGeometryData")
     private byte[] skinGeometry; // deserialized
-    @JsonProperty("SkinGeometryName")
+    @JsonProperty("SkinResourcePatch")
     private String skinGeometryName;
+    @JsonProperty("SkinImageHeight")
+    private int skinImageHeight;
+    @JsonProperty("SkinImageWidth")
+    private int skinImageWidth;
     @JsonProperty("SkinId")
     private String skinId;
     @JsonProperty("ThirdPartyName")
     private String thirdPartyName;
     @JsonProperty("UIProfile")
-    private int uiProfile;
+    private UIProfile uiProfile;
+    @JsonProperty("CapeOnClassicSkin")
+    private boolean capeOnClassicSkin;
+    @JsonProperty("PersonaSkin")
+    private boolean personaSkin;
+    @JsonProperty("CapeImageHeight")
+    private int capeImageHeight;
+    @JsonProperty("CapeImageWidth")
+    private int capeImageWidth;
+    @JsonProperty("CapeId")
+    private String capeId;
 }

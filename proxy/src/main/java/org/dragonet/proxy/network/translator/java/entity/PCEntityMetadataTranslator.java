@@ -1,6 +1,6 @@
 /*
  * DragonProxy
- * Copyright (C) 2016-2019 Dragonet Foundation
+ * Copyright (C) 2016-2020 Dragonet Foundation
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,35 +19,29 @@
 package org.dragonet.proxy.network.translator.java.entity;
 
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerEntityMetadataPacket;
-import com.nukkitx.protocol.bedrock.data.EntityDataDictionary;
-import com.nukkitx.protocol.bedrock.packet.SetEntityDataPacket;
+import com.nukkitx.protocol.bedrock.data.EntityDataMap;
 import lombok.extern.log4j.Log4j2;
 import org.dragonet.proxy.network.session.ProxySession;
 import org.dragonet.proxy.network.session.cache.object.CachedEntity;
-import org.dragonet.proxy.network.translator.PacketTranslator;
-import org.dragonet.proxy.network.translator.annotations.PCPacketTranslator;
-import org.dragonet.proxy.network.translator.types.EntityMetaTranslator;
+import org.dragonet.proxy.network.translator.misc.PacketTranslator;
+import org.dragonet.proxy.util.registry.PacketRegisterInfo;
+import org.dragonet.proxy.network.translator.misc.EntityMetaTranslator;
 
 @Log4j2
-@PCPacketTranslator(packetClass = ServerEntityMetadataPacket.class)
+@PacketRegisterInfo(packet = ServerEntityMetadataPacket.class)
 public class PCEntityMetadataTranslator extends PacketTranslator<ServerEntityMetadataPacket> {
-    public static final PCEntityMetadataTranslator INSTANCE = new PCEntityMetadataTranslator();
 
     @Override
     public void translate(ProxySession session, ServerEntityMetadataPacket packet) {
         CachedEntity cachedEntity = session.getEntityCache().getByRemoteId(packet.getEntityId());
         if(cachedEntity == null) {
-            //log.info("(debug) Cached entity is null");
+            //log.info(TextFormat.GRAY + "(debug) EntityMetadataTranslator: Cached entity is null");
             return;
         }
 
-        EntityDataDictionary metadata = EntityMetaTranslator.translateToBedrock(cachedEntity, packet.getMetadata());
+        EntityDataMap metadata = EntityMetaTranslator.translateToBedrock(session, cachedEntity, packet.getMetadata());
         cachedEntity.getMetadata().putAll(metadata);
 
-        SetEntityDataPacket setEntityDataPacket = new SetEntityDataPacket();
-        setEntityDataPacket.setRuntimeEntityId(cachedEntity.getProxyEid());
-        setEntityDataPacket.getMetadata().putAll(cachedEntity.getMetadata());
-
-        session.sendPacket(setEntityDataPacket);
+        cachedEntity.sendMetadata(session);
     }
 }

@@ -1,6 +1,6 @@
 /*
  * DragonProxy
- * Copyright (C) 2016-2019 Dragonet Foundation
+ * Copyright (C) 2016-2020 Dragonet Foundation
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,23 +21,19 @@ package org.dragonet.proxy.network.translator.java.world;
 import com.github.steveice10.mc.protocol.packet.ingame.server.world.ServerSpawnParticlePacket;
 import com.nukkitx.math.vector.Vector3f;
 import com.nukkitx.protocol.bedrock.packet.SpawnParticleEffectPacket;
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.dragonet.proxy.network.session.ProxySession;
-import org.dragonet.proxy.network.translator.PacketTranslator;
-import org.dragonet.proxy.network.translator.annotations.PCPacketTranslator;
+import org.dragonet.proxy.network.translator.misc.PacketTranslator;
+import org.dragonet.proxy.util.registry.PacketRegisterInfo;
 
 @Log4j2
-
-@PCPacketTranslator(packetClass = ServerSpawnParticlePacket.class)
+@PacketRegisterInfo(packet = ServerSpawnParticlePacket.class)
 public class PCSpawnParticleTranslator extends PacketTranslator<ServerSpawnParticlePacket> {
-    public static final PCSpawnParticleTranslator INSTANCE = new PCSpawnParticleTranslator();
 
     @Override
     public void translate(ProxySession session, ServerSpawnParticlePacket packet) {
-        // This doesnt work yet, ffs Mojang
         SpawnParticleEffectPacket spawnParticlePacket = new SpawnParticleEffectPacket();
+        //spawnParticlePacket.setUniqueEntityId();
         spawnParticlePacket.setDimensionId(0);
         spawnParticlePacket.setIdentifier("minecraft:heart");
         spawnParticlePacket.setPosition(Vector3f.from(0, 48, 2));

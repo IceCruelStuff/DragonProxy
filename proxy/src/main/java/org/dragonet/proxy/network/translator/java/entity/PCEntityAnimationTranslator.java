@@ -1,6 +1,6 @@
 /*
  * DragonProxy
- * Copyright (C) 2016-2019 Dragonet Foundation
+ * Copyright (C) 2016-2020 Dragonet Foundation
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,19 +23,19 @@ import com.nukkitx.protocol.bedrock.packet.AnimatePacket;
 import lombok.extern.log4j.Log4j2;
 import org.dragonet.proxy.network.session.ProxySession;
 import org.dragonet.proxy.network.session.cache.object.CachedEntity;
-import org.dragonet.proxy.network.translator.PacketTranslator;
-import org.dragonet.proxy.network.translator.annotations.PCPacketTranslator;
+import org.dragonet.proxy.network.translator.misc.PacketTranslator;
+import org.dragonet.proxy.util.registry.PacketRegisterInfo;
+import org.dragonet.proxy.util.TextFormat;
 
 @Log4j2
-@PCPacketTranslator(packetClass = ServerEntityAnimationPacket.class)
+@PacketRegisterInfo(packet = ServerEntityAnimationPacket.class)
 public class PCEntityAnimationTranslator extends PacketTranslator<ServerEntityAnimationPacket> {
-    public static final PCEntityAnimationTranslator INSTANCE = new PCEntityAnimationTranslator();
 
     @Override
     public void translate(ProxySession session, ServerEntityAnimationPacket packet) {
         CachedEntity cachedEntity = session.getEntityCache().getByRemoteId(packet.getEntityId());
         if(cachedEntity == null) {
-            //log.info("(debug) Cached entity is null");
+            log.info(TextFormat.GRAY + "(debug) PCEntityAnimationTranslator: Cached entity is null");
             return;
         }
 
