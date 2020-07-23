@@ -55,6 +55,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 @Log4j2
 public class DragonProxy {
+
     public static final BedrockPacketCodec BEDROCK_CODEC = Bedrock_v390.V390_CODEC;
     public static final BedrockPacketCodec[] BEDROCK_SUPPORTED_CODECS = {BEDROCK_CODEC, Bedrock_v389.V389_CODEC};
     public static final int[] BEDROCK_SUPPORTED_PROTOCOLS;
@@ -160,7 +161,7 @@ public class DragonProxy {
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory()).enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS);
         configuration = mapper.readValue(new FileInputStream(new File(dataFolder, "config.yml")), DragonConfiguration.class);
 
-        if(configuration.getConfigVersion() < CONFIG_VERSION) {
+        if (configuration.getConfigVersion() < CONFIG_VERSION) {
             log.error("Outdated config.yml file. Please delete the file to allow it to regenerate.");
             log.error("Join the discord for support: https://invite.gg/DragonetMC");
 
@@ -168,7 +169,7 @@ public class DragonProxy {
             return;
         }
 
-        if(!configuration.isPingPassthrough() && configuration.getMaxPlayers() < 0) {
+        if (!configuration.isPingPassthrough() && configuration.getMaxPlayers() < 0) {
             log.error("The max players in the config has been set to a value less than 0, and ping passthrough is disabled");
 
             System.exit(0);
@@ -177,7 +178,7 @@ public class DragonProxy {
 
         handleConfigOverrides();
 
-        if(!RELEASE) {
+        if (!RELEASE) {
             log.warn("This is a development build. It may contain bugs. Do not use in production.");
         }
 
@@ -200,7 +201,7 @@ public class DragonProxy {
 
         pingPassthroughThread = new PingPassthroughThread(this);
 
-        if(configuration.isPingPassthrough()) {
+        if (configuration.isPingPassthrough()) {
             generalThreadPool.scheduleAtFixedRate(pingPassthroughThread, 1, 10, TimeUnit.SECONDS);
             log.info("Ping passthrough enabled");
         }
@@ -223,7 +224,7 @@ public class DragonProxy {
         double bootTime = (System.currentTimeMillis() - startTime) / 1000d;
         log.info("Done ({}s)!", new DecimalFormat("#.##").format(bootTime));
 
-        if(platformType == PlatformType.STANDALONE) {
+        if (platformType == PlatformType.STANDALONE) {
             console = new DragonConsole(this);
             console.start();
         }
@@ -239,13 +240,13 @@ public class DragonProxy {
     }
 
     private void handleConfigOverrides() {
-        if(bindPort != -1) {
+        if (bindPort != -1) {
             configuration.setBindPort(bindPort);
         }
-        if(remoteAddress != null) {
+        if (remoteAddress != null) {
             configuration.getRemoteServer().setAddress(remoteAddress);
         }
-        if(remotePort != -1) {
+        if (remotePort != -1) {
             configuration.getRemoteServer().setPort(remotePort);
         }
     }
@@ -260,7 +261,7 @@ public class DragonProxy {
 
         this.running = false;
 
-        if(platformType == PlatformType.STANDALONE) {
+        if (platformType == PlatformType.STANDALONE) {
             System.exit(0); // Fix hanging
 
             synchronized (this) {
@@ -276,4 +277,5 @@ public class DragonProxy {
         String version = DragonProxy.class.getPackage().getImplementationVersion();
         return version == null ? "(unpackaged)" : version;
     }
+
 }
